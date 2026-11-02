@@ -1,0 +1,128 @@
+{
+  "config_source": "synthetic-settings.json",
+  "format": "hookdoctor-report/1",
+  "hooks": [
+    {
+      "class": "firing",
+      "command": "guard-bash.sh",
+      "event": "PreToolUse",
+      "evidence": {
+        "effects": {
+          "consumed_output": 0,
+          "denial": 1,
+          "modification": 0
+        },
+        "first_ran_at": "2026-01-01T09:00:05Z",
+        "last_ran_at": "2026-01-01T09:00:05Z",
+        "matched": 1,
+        "ran": 1
+      },
+      "hook_type": "command",
+      "id": "PreToolUse:0:0",
+      "matcher": "Bash"
+    },
+    {
+      "class": "firing-without-effect",
+      "command": "lint-edit.py",
+      "event": "PreToolUse",
+      "evidence": {
+        "effects": {
+          "consumed_output": 0,
+          "denial": 0,
+          "modification": 0
+        },
+        "first_ran_at": "2026-01-01T09:02:00Z",
+        "last_ran_at": "2026-01-01T09:02:00Z",
+        "matched": 1,
+        "ran": 1
+      },
+      "hook_type": "command",
+      "id": "PreToolUse:1:0",
+      "matcher": "Edit|Write"
+    },
+    {
+      "class": "firing",
+      "command": "audit-all.sh",
+      "event": "PreToolUse",
+      "evidence": {
+        "effects": {
+          "consumed_output": 0,
+          "denial": 1,
+          "modification": 0
+        },
+        "first_ran_at": "2026-01-01T09:00:05Z",
+        "last_ran_at": "2026-01-01T09:02:00Z",
+        "matched": 2,
+        "ran": 2
+      },
+      "hook_type": "command",
+      "id": "PreToolUse:2:0",
+      "matcher": ""
+    },
+    {
+      "class": "firing-without-effect",
+      "command": "log-bash.sh",
+      "event": "PostToolUse",
+      "evidence": {
+        "effects": {
+          "consumed_output": 0,
+          "denial": 0,
+          "modification": 0
+        },
+        "first_ran_at": "2026-01-01T09:00:07Z",
+        "last_ran_at": "2026-01-01T09:00:07Z",
+        "matched": 1,
+        "ran": 1
+      },
+      "hook_type": "command",
+      "id": "PostToolUse:0:0",
+      "matcher": "Bash"
+    },
+    {
+      "class": "firing-without-effect",
+      "command": "note-prompt.sh",
+      "event": "UserPromptSubmit",
+      "evidence": {
+        "effects": {
+          "consumed_output": 0,
+          "denial": 0,
+          "modification": 0
+        },
+        "first_ran_at": "2026-01-01T09:00:00Z",
+        "last_ran_at": "2026-01-01T09:00:00Z",
+        "matched": 1,
+        "ran": 1
+      },
+      "hook_type": "command",
+      "id": "UserPromptSubmit:0:0",
+      "matcher": null
+    },
+    {
+      "class": "firing-without-effect",
+      "command": "wrap-up.sh",
+      "event": "Stop",
+      "evidence": {
+        "effects": {
+          "consumed_output": 0,
+          "denial": 0,
+          "modification": 0
+        },
+        "first_ran_at": "2026-01-01T09:03:00Z",
+        "last_ran_at": "2026-01-01T09:03:00Z",
+        "matched": 1,
+        "ran": 1
+      },
+      "hook_type": "command",
+      "id": "Stop:0:0",
+      "matcher": null
+    }
+  ],
+  "near_misses": [],
+  "session_sources": [
+    "synthetic-session.jsonl"
+  ],
+  "window": {
+    "end": null,
+    "start": null
+  }
+}
