@@ -1,0 +1,6 @@
+{"type": "user", "timestamp": "2026-01-01T09:00:00Z", "sessionId": "synthetic-session-1", "message": {"role": "user", "content": "please run the tests"}}
+{"type": "assistant", "timestamp": "2026-01-01T09:00:05Z", "sessionId": "synthetic-session-1", "message": {"role": "assistant", "content": [{"type": "tool_use", "id": "call-1", "name": "Bash", "input": {"command": "synthetic"}}]}}
+{"type": "user", "timestamp": "2026-01-01T09:00:07Z", "sessionId": "synthetic-session-1", "message": {"role": "user", "content": [{"type": "tool_result", "tool_use_id": "call-1", "content": "denied by policy", "is_error": true}]}}
+{"type": "assistant", "timestamp": "2026-01-01T09:02:00Z", "sessionId": "synthetic-session-1", "message": {"role": "assistant", "content": [{"type": "tool_use", "id": "call-2", "name": "Edit", "input": {"command": "synthetic"}}]}}
+{"type": "user", "timestamp": "2026-01-01T09:02:05Z", "sessionId": "synthetic-session-1", "message": {"role": "user", "content": [{"type": "tool_result", "tool_use_id": "call-2", "content": "lint clean", "is_error": false}]}}
+{"type": "system", "subtype": "stop_hook_summary", "timestamp": "2026-01-01T09:03:00Z", "sessionId": "synthetic-session-1", "hookCount": 1, "hookInfos": [{"command": "wrap-up.sh"}], "hookErrors": [], "preventedContinuation": false, "hasOutput": false}
