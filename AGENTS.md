@@ -58,4 +58,4 @@ This annex is hookdoctor's alone. The canonical part above this repo's annex is 
 
 Hookdoctor audits the harness's hooks, blindgate audits CI's checks.
 
-Configurations and session traces are ingested as local files with synthetic fixtures only and no network in the tool or the tests, and no real session data may ever become a fixture. The local gate is python -m pytest once the suite exists. The closed round count stands in the README and moves only at a closure.
+Configurations and session traces are ingested as local files with synthetic fixtures only and no network in the tool or the tests, and no real session data may ever become a fixture. The local gate is python -m pytest and cargo test once the crate exists. The closed round count stands in the README and moves only at a closure.

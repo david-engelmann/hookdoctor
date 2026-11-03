@@ -9,7 +9,7 @@ from pathlib import Path
 
 from .errors import HookdoctorError
 from .examine import build_report, validate_report
-from .ingest import parse_config, parse_session_text
+from .ingest import pairs_hook, parse_config, parse_session_text
 from .report import render_json, render_markdown
 
 
@@ -23,7 +23,10 @@ def _read_bytes(path, label):
 def _read_json(path, label):
     data = _read_bytes(path, label)
     try:
-        document = json.loads(data.decode("utf-8"))
+        document = json.loads(
+            data.decode("utf-8"),
+            object_pairs_hook=pairs_hook(f"the {label}"),
+        )
     except (UnicodeDecodeError, json.JSONDecodeError) as exc:
         raise HookdoctorError(f"the {label} is not valid JSON") from exc
     return document

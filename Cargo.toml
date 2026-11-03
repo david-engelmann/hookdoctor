@@ -1,0 +1,14 @@
+[package]
+name = "hookdoctor"
+version = "0.1.0"
+edition = "2021"
+description = "An examination of configured hooks against session execution traces"
+license = "MIT"
+
+[lib]
+name = "hookdoctor"
+path = "src/lib.rs"
+
+[[bin]]
+name = "hookdoctor"
+path = "src/main.rs"

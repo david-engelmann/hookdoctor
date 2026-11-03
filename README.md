@@ -8,7 +8,8 @@ Hook tooling logs that a hook fired and checks that it is installed, and never j
 
 ## Status
 
-- Closed rounds stand at 1 of 100
+- Closed rounds stand at 2 of 100
+- Round 2 is built on a local branch and awaits its reviews, carrying the duplicate JSON key refusal in every JSON document the tool accepts and the first Rust port slice with the examination carried end to end in the crate and proven by 305 recorded conformance cases against the landed Python
 - Slice 2 is built and proven on synthetic targets only
 - Slice 2 ingests a local Claude Code hooks settings document and local session JSONL files and builds dated trace records for tool calls and outcomes and prompts and hook runs and stop summaries
 - Slice 2 classifies every configured hook as firing or silent or firing without effect under a stated effect definition covering denials and modifications and consumed output, and it reports near misses for silent hooks under three stated edits so a rare fire alarm is not mistaken for a corpse
