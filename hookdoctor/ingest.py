@@ -17,6 +17,27 @@ HOOK_ATTACHMENT_TYPES = frozenset(
 )
 
 
+def _object_from_pairs(pairs, document):
+    """Build one JSON object, refusing a key that stands twice."""
+    result = {}
+    for key, value in pairs:
+        if key in result:
+            raise HookdoctorError(
+                f"{document} carries the key {key} more than once"
+            )
+        result[key] = value
+    return result
+
+
+def pairs_hook(document):
+    """Return a decoder hook that refuses repeated keys in one object."""
+
+    def hook(pairs):
+        return _object_from_pairs(pairs, document)
+
+    return hook
+
+
 @dataclass(frozen=True)
 class HookConfig:
     """One configured hook entry flattened from its matcher group."""
@@ -137,7 +158,9 @@ def parse_session_text(text, file_index=0):
         if not raw.strip():
             continue
         try:
-            line_object = json.loads(raw)
+            line_object = json.loads(
+                raw, object_pairs_hook=pairs_hook("a session line")
+            )
         except json.JSONDecodeError as exc:
             raise HookdoctorError("a session line is not valid JSON") from exc
         if not isinstance(line_object, dict) or "type" not in line_object:

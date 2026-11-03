@@ -14,7 +14,7 @@ def test_seed_files_present():
     assert "MIT License" in licence
     assert "__pycache__/" in gitignore
     assert ".env" in gitignore
-    assert "Closed rounds stand at 1 of 100" in readme
+    assert "Closed rounds stand at 2 of 100" in readme
 
 
 def test_agents_template_and_annex():
@@ -28,5 +28,5 @@ def test_agents_template_and_annex():
     assert "ingested as local files with synthetic fixtures only" in annex
     assert "no network in the tool or the tests" in annex
     assert "no real session data may ever become a fixture" in annex
-    assert "The local gate is python -m pytest once the suite exists" in annex
+    assert "The local gate is python -m pytest and cargo test once the crate exists" in annex
     assert "closed round count stands in the README and moves only at a closure" in annex
