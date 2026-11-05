@@ -8,7 +8,8 @@ Hook tooling logs that a hook fired and checks that it is installed, and never j
 
 ## Status
 
-- Closed rounds stand at 2 of 100
+- Round 3 lands the closing slice of the Rust port, carrying the command line whole into the binary and retiring the Python package and suite, proven by a recorded black box battery of 45 invocations beside the standing recordings, so the tree stands Rust whole on both surfaces
+- Closed rounds stand at 3 of 100
 - Round 2 is built on a local branch and awaits its reviews, carrying the duplicate JSON key refusal in every JSON document the tool accepts and the first Rust port slice with the examination carried end to end in the crate and proven by 305 recorded conformance cases against the landed Python
 - Slice 2 is built and proven on synthetic targets only
 - Slice 2 ingests a local Claude Code hooks settings document and local session JSONL files and builds dated trace records for tool calls and outcomes and prompts and hook runs and stop summaries

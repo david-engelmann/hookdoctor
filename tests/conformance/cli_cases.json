@@ -1,0 +1,1504 @@
+{
+ "format": "hookdoctor-cli-cases/1",
+ "note": "Recorded by running the landed Python command line as a black box over these invocations. A step whose standard error carries the argument reader usage text records no standard error text, because the contract states the argument reader texts stand outside the port, and the runner asserts the binary writes its own usage line for such a step.",
+ "cases": [
+  {
+   "name": "deterministic outputs over the examples",
+   "section": "behaviours",
+   "inputs": [
+    {
+     "path": "synthetic-settings.json",
+     "text": "{\n  \"hooks\": {\n    \"PreToolUse\": [\n      {\n        \"matcher\": \"Bash\",\n        \"hooks\": [\n          {\n            \"type\": \"command\",\n            \"command\": \"guard-bash.sh\"\n          }\n        ]\n      },\n      {\n        \"matcher\": \"Edit|Write\",\n        \"hooks\": [\n          {\n            \"type\": \"command\",\n            \"command\": \"lint-edit.py\"\n          }\n        ]\n      },\n      {\n        \"matcher\": \"\",\n        \"hooks\": [\n          {\n            \"type\": \"command\",\n            \"command\": \"audit-all.sh\"\n          }\n        ]\n      }\n    ],\n    \"PostToolUse\": [\n      {\n        \"matcher\": \"Bash\",\n        \"hooks\": [\n          {\n            \"type\": \"command\",\n            \"command\": \"log-bash.sh\"\n          }\n        ]\n      }\n    ],\n    \"UserPromptSubmit\": [\n      {\n        \"hooks\": [\n          {\n            \"type\": \"command\",\n            \"command\": \"note-prompt.sh\"\n          }\n        ]\n      }\n    ],\n    \"Stop\": [\n      {\n        \"hooks\": [\n          {\n            \"type\": \"command\",\n            \"command\": \"wrap-up.sh\"\n          }\n        ]\n      }\n    ]\n  }\n}\n"
+    },
+    {
+     "path": "synthetic-session.jsonl",
+     "text": "{\"type\": \"user\", \"timestamp\": \"2026-01-01T09:00:00Z\", \"sessionId\": \"synthetic-session-1\", \"message\": {\"role\": \"user\", \"content\": \"please run the tests\"}}\n{\"type\": \"assistant\", \"timestamp\": \"2026-01-01T09:00:05Z\", \"sessionId\": \"synthetic-session-1\", \"message\": {\"role\": \"assistant\", \"content\": [{\"type\": \"tool_use\", \"id\": \"call-1\", \"name\": \"Bash\", \"input\": {\"command\": \"synthetic\"}}]}}\n{\"type\": \"user\", \"timestamp\": \"2026-01-01T09:00:07Z\", \"sessionId\": \"synthetic-session-1\", \"message\": {\"role\": \"user\", \"content\": [{\"type\": \"tool_result\", \"tool_use_id\": \"call-1\", \"content\": \"denied by policy\", \"is_error\": true}]}}\n{\"type\": \"assistant\", \"timestamp\": \"2026-01-01T09:02:00Z\", \"sessionId\": \"synthetic-session-1\", \"message\": {\"role\": \"assistant\", \"content\": [{\"type\": \"tool_use\", \"id\": \"call-2\", \"name\": \"Edit\", \"input\": {\"command\": \"synthetic\"}}]}}\n{\"type\": \"user\", \"timestamp\": \"2026-01-01T09:02:05Z\", \"sessionId\": \"synthetic-session-1\", \"message\": {\"role\": \"user\", \"content\": [{\"type\": \"tool_result\", \"tool_use_id\": \"call-2\", \"content\": \"lint clean\", \"is_error\": false}]}}\n{\"type\": \"system\", \"subtype\": \"stop_hook_summary\", \"timestamp\": \"2026-01-01T09:03:00Z\", \"sessionId\": \"synthetic-session-1\", \"hookCount\": 1, \"hookInfos\": [{\"command\": \"wrap-up.sh\"}], \"hookErrors\": [], \"preventedContinuation\": false, \"hasOutput\": false}\n"
+    }
+   ],
+   "steps": [
+    {
+     "argv": [
+      "--config",
+      "{DIR}/synthetic-settings.json",
+      "--session",
+      "{DIR}/synthetic-session.jsonl",
+      "--output",
+      "{DIR}/first.json",
+      "--report",
+      "{DIR}/first.md"
+     ],
+     "exit": 0,
+     "stderr": "",
+     "stdout_empty": true
+    },
+    {
+     "argv": [
+      "--config",
+      "{DIR}/synthetic-settings.json",
+      "--session",
+      "{DIR}/synthetic-session.jsonl",
+      "--output",
+      "{DIR}/second.json",
+      "--report",
+      "{DIR}/second.md"
+     ],
+     "exit": 0,
+     "stderr": "",
+     "stdout_empty": true
+    }
+   ],
+   "outputs": [
+    {
+     "path": "first.json",
+     "text": "{\n  \"config_source\": \"synthetic-settings.json\",\n  \"format\": \"hookdoctor-report/1\",\n  \"hooks\": [\n    {\n      \"class\": \"firing\",\n      \"command\": \"guard-bash.sh\",\n      \"event\": \"PreToolUse\",\n      \"evidence\": {\n        \"effects\": {\n          \"consumed_output\": 0,\n          \"denial\": 1,\n          \"modification\": 0\n        },\n        \"first_ran_at\": \"2026-01-01T09:00:05Z\",\n        \"last_ran_at\": \"2026-01-01T09:00:05Z\",\n        \"matched\": 1,\n        \"ran\": 1\n      },\n      \"hook_type\": \"command\",\n      \"id\": \"PreToolUse:0:0\",\n      \"matcher\": \"Bash\"\n    },\n    {\n      \"class\": \"firing-without-effect\",\n      \"command\": \"lint-edit.py\",\n      \"event\": \"PreToolUse\",\n      \"evidence\": {\n        \"effects\": {\n          \"consumed_output\": 0,\n          \"denial\": 0,\n          \"modification\": 0\n        },\n        \"first_ran_at\": \"2026-01-01T09:02:00Z\",\n        \"last_ran_at\": \"2026-01-01T09:02:00Z\",\n        \"matched\": 1,\n        \"ran\": 1\n      },\n      \"hook_type\": \"command\",\n      \"id\": \"PreToolUse:1:0\",\n      \"matcher\": \"Edit|Write\"\n    },\n    {\n      \"class\": \"firing\",\n      \"command\": \"audit-all.sh\",\n      \"event\": \"PreToolUse\",\n      \"evidence\": {\n        \"effects\": {\n          \"consumed_output\": 0,\n          \"denial\": 1,\n          \"modification\": 0\n        },\n        \"first_ran_at\": \"2026-01-01T09:00:05Z\",\n        \"last_ran_at\": \"2026-01-01T09:02:00Z\",\n        \"matched\": 2,\n        \"ran\": 2\n      },\n      \"hook_type\": \"command\",\n      \"id\": \"PreToolUse:2:0\",\n      \"matcher\": \"\"\n    },\n    {\n      \"class\": \"firing-without-effect\",\n      \"command\": \"log-bash.sh\",\n      \"event\": \"PostToolUse\",\n      \"evidence\": {\n        \"effects\": {\n          \"consumed_output\": 0,\n          \"denial\": 0,\n          \"modification\": 0\n        },\n        \"first_ran_at\": \"2026-01-01T09:00:07Z\",\n        \"last_ran_at\": \"2026-01-01T09:00:07Z\",\n        \"matched\": 1,\n        \"ran\": 1\n      },\n      \"hook_type\": \"command\",\n      \"id\": \"PostToolUse:0:0\",\n      \"matcher\": \"Bash\"\n    },\n    {\n      \"class\": \"firing-without-effect\",\n      \"command\": \"note-prompt.sh\",\n      \"event\": \"UserPromptSubmit\",\n      \"evidence\": {\n        \"effects\": {\n          \"consumed_output\": 0,\n          \"denial\": 0,\n          \"modification\": 0\n        },\n        \"first_ran_at\": \"2026-01-01T09:00:00Z\",\n        \"last_ran_at\": \"2026-01-01T09:00:00Z\",\n        \"matched\": 1,\n        \"ran\": 1\n      },\n      \"hook_type\": \"command\",\n      \"id\": \"UserPromptSubmit:0:0\",\n      \"matcher\": null\n    },\n    {\n      \"class\": \"firing-without-effect\",\n      \"command\": \"wrap-up.sh\",\n      \"event\": \"Stop\",\n      \"evidence\": {\n        \"effects\": {\n          \"consumed_output\": 0,\n          \"denial\": 0,\n          \"modification\": 0\n        },\n        \"first_ran_at\": \"2026-01-01T09:03:00Z\",\n        \"last_ran_at\": \"2026-01-01T09:03:00Z\",\n        \"matched\": 1,\n        \"ran\": 1\n      },\n      \"hook_type\": \"command\",\n      \"id\": \"Stop:0:0\",\n      \"matcher\": null\n    }\n  ],\n  \"near_misses\": [],\n  \"session_sources\": [\n    \"synthetic-session.jsonl\"\n  ],\n  \"window\": {\n    \"end\": null,\n    \"start\": null\n  }\n}\n"
+    },
+    {
+     "path": "first.md",
+     "text": "# hookdoctor examination\n\nFormat hookdoctor-report/1\nConfiguration source synthetic-settings.json\nSession sources synthetic-session.jsonl\nWindow start None end None\n\n## Hooks\n\n### guard-bash.sh\n\nIdentifier PreToolUse:0:0\nEvent PreToolUse\nMatcher Bash\nClass firing\nMatched 1\nRan 1\nEffects denial 1, modification 0, consumed output 0\nFirst ran at 2026-01-01T09:00:05Z\nLast ran at 2026-01-01T09:00:05Z\n\n### lint-edit.py\n\nIdentifier PreToolUse:1:0\nEvent PreToolUse\nMatcher Edit|Write\nClass firing-without-effect\nMatched 1\nRan 1\nEffects denial 0, modification 0, consumed output 0\nFirst ran at 2026-01-01T09:02:00Z\nLast ran at 2026-01-01T09:02:00Z\n\n### audit-all.sh\n\nIdentifier PreToolUse:2:0\nEvent PreToolUse\nMatcher \nClass firing\nMatched 2\nRan 2\nEffects denial 1, modification 0, consumed output 0\nFirst ran at 2026-01-01T09:00:05Z\nLast ran at 2026-01-01T09:02:00Z\n\n### log-bash.sh\n\nIdentifier PostToolUse:0:0\nEvent PostToolUse\nMatcher Bash\nClass firing-without-effect\nMatched 1\nRan 1\nEffects denial 0, modification 0, consumed output 0\nFirst ran at 2026-01-01T09:00:07Z\nLast ran at 2026-01-01T09:00:07Z\n\n### note-prompt.sh\n\nIdentifier UserPromptSubmit:0:0\nEvent UserPromptSubmit\nMatcher None\nClass firing-without-effect\nMatched 1\nRan 1\nEffects denial 0, modification 0, consumed output 0\nFirst ran at 2026-01-01T09:00:00Z\nLast ran at 2026-01-01T09:00:00Z\n\n### wrap-up.sh\n\nIdentifier Stop:0:0\nEvent Stop\nMatcher None\nClass firing-without-effect\nMatched 1\nRan 1\nEffects denial 0, modification 0, consumed output 0\nFirst ran at 2026-01-01T09:03:00Z\nLast ran at 2026-01-01T09:03:00Z\n\n## Near misses\n\nNone.\n"
+    },
+    {
+     "path": "second.json",
+     "text": "{\n  \"config_source\": \"synthetic-settings.json\",\n  \"format\": \"hookdoctor-report/1\",\n  \"hooks\": [\n    {\n      \"class\": \"firing\",\n      \"command\": \"guard-bash.sh\",\n      \"event\": \"PreToolUse\",\n      \"evidence\": {\n        \"effects\": {\n          \"consumed_output\": 0,\n          \"denial\": 1,\n          \"modification\": 0\n        },\n        \"first_ran_at\": \"2026-01-01T09:00:05Z\",\n        \"last_ran_at\": \"2026-01-01T09:00:05Z\",\n        \"matched\": 1,\n        \"ran\": 1\n      },\n      \"hook_type\": \"command\",\n      \"id\": \"PreToolUse:0:0\",\n      \"matcher\": \"Bash\"\n    },\n    {\n      \"class\": \"firing-without-effect\",\n      \"command\": \"lint-edit.py\",\n      \"event\": \"PreToolUse\",\n      \"evidence\": {\n        \"effects\": {\n          \"consumed_output\": 0,\n          \"denial\": 0,\n          \"modification\": 0\n        },\n        \"first_ran_at\": \"2026-01-01T09:02:00Z\",\n        \"last_ran_at\": \"2026-01-01T09:02:00Z\",\n        \"matched\": 1,\n        \"ran\": 1\n      },\n      \"hook_type\": \"command\",\n      \"id\": \"PreToolUse:1:0\",\n      \"matcher\": \"Edit|Write\"\n    },\n    {\n      \"class\": \"firing\",\n      \"command\": \"audit-all.sh\",\n      \"event\": \"PreToolUse\",\n      \"evidence\": {\n        \"effects\": {\n          \"consumed_output\": 0,\n          \"denial\": 1,\n          \"modification\": 0\n        },\n        \"first_ran_at\": \"2026-01-01T09:00:05Z\",\n        \"last_ran_at\": \"2026-01-01T09:02:00Z\",\n        \"matched\": 2,\n        \"ran\": 2\n      },\n      \"hook_type\": \"command\",\n      \"id\": \"PreToolUse:2:0\",\n      \"matcher\": \"\"\n    },\n    {\n      \"class\": \"firing-without-effect\",\n      \"command\": \"log-bash.sh\",\n      \"event\": \"PostToolUse\",\n      \"evidence\": {\n        \"effects\": {\n          \"consumed_output\": 0,\n          \"denial\": 0,\n          \"modification\": 0\n        },\n        \"first_ran_at\": \"2026-01-01T09:00:07Z\",\n        \"last_ran_at\": \"2026-01-01T09:00:07Z\",\n        \"matched\": 1,\n        \"ran\": 1\n      },\n      \"hook_type\": \"command\",\n      \"id\": \"PostToolUse:0:0\",\n      \"matcher\": \"Bash\"\n    },\n    {\n      \"class\": \"firing-without-effect\",\n      \"command\": \"note-prompt.sh\",\n      \"event\": \"UserPromptSubmit\",\n      \"evidence\": {\n        \"effects\": {\n          \"consumed_output\": 0,\n          \"denial\": 0,\n          \"modification\": 0\n        },\n        \"first_ran_at\": \"2026-01-01T09:00:00Z\",\n        \"last_ran_at\": \"2026-01-01T09:00:00Z\",\n        \"matched\": 1,\n        \"ran\": 1\n      },\n      \"hook_type\": \"command\",\n      \"id\": \"UserPromptSubmit:0:0\",\n      \"matcher\": null\n    },\n    {\n      \"class\": \"firing-without-effect\",\n      \"command\": \"wrap-up.sh\",\n      \"event\": \"Stop\",\n      \"evidence\": {\n        \"effects\": {\n          \"consumed_output\": 0,\n          \"denial\": 0,\n          \"modification\": 0\n        },\n        \"first_ran_at\": \"2026-01-01T09:03:00Z\",\n        \"last_ran_at\": \"2026-01-01T09:03:00Z\",\n        \"matched\": 1,\n        \"ran\": 1\n      },\n      \"hook_type\": \"command\",\n      \"id\": \"Stop:0:0\",\n      \"matcher\": null\n    }\n  ],\n  \"near_misses\": [],\n  \"session_sources\": [\n    \"synthetic-session.jsonl\"\n  ],\n  \"window\": {\n    \"end\": null,\n    \"start\": null\n  }\n}\n"
+    },
+    {
+     "path": "second.md",
+     "text": "# hookdoctor examination\n\nFormat hookdoctor-report/1\nConfiguration source synthetic-settings.json\nSession sources synthetic-session.jsonl\nWindow start None end None\n\n## Hooks\n\n### guard-bash.sh\n\nIdentifier PreToolUse:0:0\nEvent PreToolUse\nMatcher Bash\nClass firing\nMatched 1\nRan 1\nEffects denial 1, modification 0, consumed output 0\nFirst ran at 2026-01-01T09:00:05Z\nLast ran at 2026-01-01T09:00:05Z\n\n### lint-edit.py\n\nIdentifier PreToolUse:1:0\nEvent PreToolUse\nMatcher Edit|Write\nClass firing-without-effect\nMatched 1\nRan 1\nEffects denial 0, modification 0, consumed output 0\nFirst ran at 2026-01-01T09:02:00Z\nLast ran at 2026-01-01T09:02:00Z\n\n### audit-all.sh\n\nIdentifier PreToolUse:2:0\nEvent PreToolUse\nMatcher \nClass firing\nMatched 2\nRan 2\nEffects denial 1, modification 0, consumed output 0\nFirst ran at 2026-01-01T09:00:05Z\nLast ran at 2026-01-01T09:02:00Z\n\n### log-bash.sh\n\nIdentifier PostToolUse:0:0\nEvent PostToolUse\nMatcher Bash\nClass firing-without-effect\nMatched 1\nRan 1\nEffects denial 0, modification 0, consumed output 0\nFirst ran at 2026-01-01T09:00:07Z\nLast ran at 2026-01-01T09:00:07Z\n\n### note-prompt.sh\n\nIdentifier UserPromptSubmit:0:0\nEvent UserPromptSubmit\nMatcher None\nClass firing-without-effect\nMatched 1\nRan 1\nEffects denial 0, modification 0, consumed output 0\nFirst ran at 2026-01-01T09:00:00Z\nLast ran at 2026-01-01T09:00:00Z\n\n### wrap-up.sh\n\nIdentifier Stop:0:0\nEvent Stop\nMatcher None\nClass firing-without-effect\nMatched 1\nRan 1\nEffects denial 0, modification 0, consumed output 0\nFirst ran at 2026-01-01T09:03:00Z\nLast ran at 2026-01-01T09:03:00Z\n\n## Near misses\n\nNone.\n"
+    }
+   ]
+  },
+  {
+   "name": "the committed example outputs regenerate",
+   "section": "behaviours",
+   "inputs": [
+    {
+     "path": "synthetic-settings.json",
+     "text": "{\n  \"hooks\": {\n    \"PreToolUse\": [\n      {\n        \"matcher\": \"Bash\",\n        \"hooks\": [\n          {\n            \"type\": \"command\",\n            \"command\": \"guard-bash.sh\"\n          }\n        ]\n      },\n      {\n        \"matcher\": \"Edit|Write\",\n        \"hooks\": [\n          {\n            \"type\": \"command\",\n            \"command\": \"lint-edit.py\"\n          }\n        ]\n      },\n      {\n        \"matcher\": \"\",\n        \"hooks\": [\n          {\n            \"type\": \"command\",\n            \"command\": \"audit-all.sh\"\n          }\n        ]\n      }\n    ],\n    \"PostToolUse\": [\n      {\n        \"matcher\": \"Bash\",\n        \"hooks\": [\n          {\n            \"type\": \"command\",\n            \"command\": \"log-bash.sh\"\n          }\n        ]\n      }\n    ],\n    \"UserPromptSubmit\": [\n      {\n        \"hooks\": [\n          {\n            \"type\": \"command\",\n            \"command\": \"note-prompt.sh\"\n          }\n        ]\n      }\n    ],\n    \"Stop\": [\n      {\n        \"hooks\": [\n          {\n            \"type\": \"command\",\n            \"command\": \"wrap-up.sh\"\n          }\n        ]\n      }\n    ]\n  }\n}\n"
+    },
+    {
+     "path": "synthetic-session.jsonl",
+     "text": "{\"type\": \"user\", \"timestamp\": \"2026-01-01T09:00:00Z\", \"sessionId\": \"synthetic-session-1\", \"message\": {\"role\": \"user\", \"content\": \"please run the tests\"}}\n{\"type\": \"assistant\", \"timestamp\": \"2026-01-01T09:00:05Z\", \"sessionId\": \"synthetic-session-1\", \"message\": {\"role\": \"assistant\", \"content\": [{\"type\": \"tool_use\", \"id\": \"call-1\", \"name\": \"Bash\", \"input\": {\"command\": \"synthetic\"}}]}}\n{\"type\": \"user\", \"timestamp\": \"2026-01-01T09:00:07Z\", \"sessionId\": \"synthetic-session-1\", \"message\": {\"role\": \"user\", \"content\": [{\"type\": \"tool_result\", \"tool_use_id\": \"call-1\", \"content\": \"denied by policy\", \"is_error\": true}]}}\n{\"type\": \"assistant\", \"timestamp\": \"2026-01-01T09:02:00Z\", \"sessionId\": \"synthetic-session-1\", \"message\": {\"role\": \"assistant\", \"content\": [{\"type\": \"tool_use\", \"id\": \"call-2\", \"name\": \"Edit\", \"input\": {\"command\": \"synthetic\"}}]}}\n{\"type\": \"user\", \"timestamp\": \"2026-01-01T09:02:05Z\", \"sessionId\": \"synthetic-session-1\", \"message\": {\"role\": \"user\", \"content\": [{\"type\": \"tool_result\", \"tool_use_id\": \"call-2\", \"content\": \"lint clean\", \"is_error\": false}]}}\n{\"type\": \"system\", \"subtype\": \"stop_hook_summary\", \"timestamp\": \"2026-01-01T09:03:00Z\", \"sessionId\": \"synthetic-session-1\", \"hookCount\": 1, \"hookInfos\": [{\"command\": \"wrap-up.sh\"}], \"hookErrors\": [], \"preventedContinuation\": false, \"hasOutput\": false}\n"
+    }
+   ],
+   "steps": [
+    {
+     "argv": [
+      "--config",
+      "{DIR}/synthetic-settings.json",
+      "--session",
+      "{DIR}/synthetic-session.jsonl",
+      "--output",
+      "{DIR}/report.json",
+      "--report",
+      "{DIR}/report.md"
+     ],
+     "exit": 0,
+     "stderr": "",
+     "stdout_empty": true
+    }
+   ],
+   "outputs": [
+    {
+     "path": "report.json",
+     "text": "{\n  \"config_source\": \"synthetic-settings.json\",\n  \"format\": \"hookdoctor-report/1\",\n  \"hooks\": [\n    {\n      \"class\": \"firing\",\n      \"command\": \"guard-bash.sh\",\n      \"event\": \"PreToolUse\",\n      \"evidence\": {\n        \"effects\": {\n          \"consumed_output\": 0,\n          \"denial\": 1,\n          \"modification\": 0\n        },\n        \"first_ran_at\": \"2026-01-01T09:00:05Z\",\n        \"last_ran_at\": \"2026-01-01T09:00:05Z\",\n        \"matched\": 1,\n        \"ran\": 1\n      },\n      \"hook_type\": \"command\",\n      \"id\": \"PreToolUse:0:0\",\n      \"matcher\": \"Bash\"\n    },\n    {\n      \"class\": \"firing-without-effect\",\n      \"command\": \"lint-edit.py\",\n      \"event\": \"PreToolUse\",\n      \"evidence\": {\n        \"effects\": {\n          \"consumed_output\": 0,\n          \"denial\": 0,\n          \"modification\": 0\n        },\n        \"first_ran_at\": \"2026-01-01T09:02:00Z\",\n        \"last_ran_at\": \"2026-01-01T09:02:00Z\",\n        \"matched\": 1,\n        \"ran\": 1\n      },\n      \"hook_type\": \"command\",\n      \"id\": \"PreToolUse:1:0\",\n      \"matcher\": \"Edit|Write\"\n    },\n    {\n      \"class\": \"firing\",\n      \"command\": \"audit-all.sh\",\n      \"event\": \"PreToolUse\",\n      \"evidence\": {\n        \"effects\": {\n          \"consumed_output\": 0,\n          \"denial\": 1,\n          \"modification\": 0\n        },\n        \"first_ran_at\": \"2026-01-01T09:00:05Z\",\n        \"last_ran_at\": \"2026-01-01T09:02:00Z\",\n        \"matched\": 2,\n        \"ran\": 2\n      },\n      \"hook_type\": \"command\",\n      \"id\": \"PreToolUse:2:0\",\n      \"matcher\": \"\"\n    },\n    {\n      \"class\": \"firing-without-effect\",\n      \"command\": \"log-bash.sh\",\n      \"event\": \"PostToolUse\",\n      \"evidence\": {\n        \"effects\": {\n          \"consumed_output\": 0,\n          \"denial\": 0,\n          \"modification\": 0\n        },\n        \"first_ran_at\": \"2026-01-01T09:00:07Z\",\n        \"last_ran_at\": \"2026-01-01T09:00:07Z\",\n        \"matched\": 1,\n        \"ran\": 1\n      },\n      \"hook_type\": \"command\",\n      \"id\": \"PostToolUse:0:0\",\n      \"matcher\": \"Bash\"\n    },\n    {\n      \"class\": \"firing-without-effect\",\n      \"command\": \"note-prompt.sh\",\n      \"event\": \"UserPromptSubmit\",\n      \"evidence\": {\n        \"effects\": {\n          \"consumed_output\": 0,\n          \"denial\": 0,\n          \"modification\": 0\n        },\n        \"first_ran_at\": \"2026-01-01T09:00:00Z\",\n        \"last_ran_at\": \"2026-01-01T09:00:00Z\",\n        \"matched\": 1,\n        \"ran\": 1\n      },\n      \"hook_type\": \"command\",\n      \"id\": \"UserPromptSubmit:0:0\",\n      \"matcher\": null\n    },\n    {\n      \"class\": \"firing-without-effect\",\n      \"command\": \"wrap-up.sh\",\n      \"event\": \"Stop\",\n      \"evidence\": {\n        \"effects\": {\n          \"consumed_output\": 0,\n          \"denial\": 0,\n          \"modification\": 0\n        },\n        \"first_ran_at\": \"2026-01-01T09:03:00Z\",\n        \"last_ran_at\": \"2026-01-01T09:03:00Z\",\n        \"matched\": 1,\n        \"ran\": 1\n      },\n      \"hook_type\": \"command\",\n      \"id\": \"Stop:0:0\",\n      \"matcher\": null\n    }\n  ],\n  \"near_misses\": [],\n  \"session_sources\": [\n    \"synthetic-session.jsonl\"\n  ],\n  \"window\": {\n    \"end\": null,\n    \"start\": null\n  }\n}\n"
+    },
+    {
+     "path": "report.md",
+     "text": "# hookdoctor examination\n\nFormat hookdoctor-report/1\nConfiguration source synthetic-settings.json\nSession sources synthetic-session.jsonl\nWindow start None end None\n\n## Hooks\n\n### guard-bash.sh\n\nIdentifier PreToolUse:0:0\nEvent PreToolUse\nMatcher Bash\nClass firing\nMatched 1\nRan 1\nEffects denial 1, modification 0, consumed output 0\nFirst ran at 2026-01-01T09:00:05Z\nLast ran at 2026-01-01T09:00:05Z\n\n### lint-edit.py\n\nIdentifier PreToolUse:1:0\nEvent PreToolUse\nMatcher Edit|Write\nClass firing-without-effect\nMatched 1\nRan 1\nEffects denial 0, modification 0, consumed output 0\nFirst ran at 2026-01-01T09:02:00Z\nLast ran at 2026-01-01T09:02:00Z\n\n### audit-all.sh\n\nIdentifier PreToolUse:2:0\nEvent PreToolUse\nMatcher \nClass firing\nMatched 2\nRan 2\nEffects denial 1, modification 0, consumed output 0\nFirst ran at 2026-01-01T09:00:05Z\nLast ran at 2026-01-01T09:02:00Z\n\n### log-bash.sh\n\nIdentifier PostToolUse:0:0\nEvent PostToolUse\nMatcher Bash\nClass firing-without-effect\nMatched 1\nRan 1\nEffects denial 0, modification 0, consumed output 0\nFirst ran at 2026-01-01T09:00:07Z\nLast ran at 2026-01-01T09:00:07Z\n\n### note-prompt.sh\n\nIdentifier UserPromptSubmit:0:0\nEvent UserPromptSubmit\nMatcher None\nClass firing-without-effect\nMatched 1\nRan 1\nEffects denial 0, modification 0, consumed output 0\nFirst ran at 2026-01-01T09:00:00Z\nLast ran at 2026-01-01T09:00:00Z\n\n### wrap-up.sh\n\nIdentifier Stop:0:0\nEvent Stop\nMatcher None\nClass firing-without-effect\nMatched 1\nRan 1\nEffects denial 0, modification 0, consumed output 0\nFirst ran at 2026-01-01T09:03:00Z\nLast ran at 2026-01-01T09:03:00Z\n\n## Near misses\n\nNone.\n"
+    }
+   ]
+  },
+  {
+   "name": "sessions stand in order with their labels in order",
+   "section": "behaviours",
+   "inputs": [
+    {
+     "path": "settings.json",
+     "text": "{\"hooks\": {\"PreToolUse\": [{\"matcher\": \"Bash\", \"hooks\": [{\"type\": \"command\", \"command\": \"guard-bash.sh\"}]}, {\"matcher\": \"Edit|Write\", \"hooks\": [{\"type\": \"command\", \"command\": \"lint-edit.py\"}]}, {\"matcher\": \"\", \"hooks\": [{\"type\": \"command\", \"command\": \"audit-all.sh\"}]}], \"PostToolUse\": [{\"matcher\": \"Bash\", \"hooks\": [{\"type\": \"command\", \"command\": \"log-bash.sh\"}]}], \"UserPromptSubmit\": [{\"hooks\": [{\"type\": \"command\", \"command\": \"note-prompt.sh\"}]}], \"Stop\": [{\"hooks\": [{\"type\": \"command\", \"command\": \"wrap-up.sh\"}]}]}}"
+    },
+    {
+     "path": "one.jsonl",
+     "text": "{\"type\": \"user\", \"timestamp\": \"2026-01-01T09:00:00Z\", \"sessionId\": \"synthetic-session-1\", \"message\": {\"role\": \"user\", \"content\": \"please run the tests\"}}\n{\"type\": \"assistant\", \"timestamp\": \"2026-01-01T09:00:05Z\", \"sessionId\": \"synthetic-session-1\", \"message\": {\"role\": \"assistant\", \"content\": [{\"type\": \"tool_use\", \"id\": \"call-1\", \"name\": \"Bash\", \"input\": {\"command\": \"synthetic\"}}]}}\n{\"type\": \"user\", \"timestamp\": \"2026-01-01T09:00:07Z\", \"sessionId\": \"synthetic-session-1\", \"message\": {\"role\": \"user\", \"content\": [{\"type\": \"tool_result\", \"tool_use_id\": \"call-1\", \"content\": \"denied by policy\", \"is_error\": true}]}}\n{\"type\": \"system\", \"subtype\": \"stop_hook_summary\", \"timestamp\": \"2026-01-01T09:01:00Z\", \"sessionId\": \"synthetic-session-1\", \"hookCount\": 1, \"hookInfos\": [{\"command\": \"wrap-up.sh\"}], \"hookErrors\": [], \"preventedContinuation\": false, \"hasOutput\": false}\n"
+    },
+    {
+     "path": "two.jsonl",
+     "text": "{\"type\": \"user\", \"timestamp\": \"2026-01-02T10:00:00Z\", \"sessionId\": \"synthetic-session-1\", \"message\": {\"role\": \"user\", \"content\": \"please lint the files\"}}\n{\"type\": \"system\", \"subtype\": \"stop_hook_summary\", \"timestamp\": \"2026-01-02T10:01:00Z\", \"sessionId\": \"synthetic-session-1\", \"hookCount\": 1, \"hookInfos\": [{\"command\": \"wrap-up.sh\"}], \"hookErrors\": [], \"preventedContinuation\": false, \"hasOutput\": false}\n"
+    }
+   ],
+   "steps": [
+    {
+     "argv": [
+      "--config",
+      "{DIR}/settings.json",
+      "--session",
+      "{DIR}/one.jsonl",
+      "--session",
+      "{DIR}/two.jsonl",
+      "--output",
+      "{DIR}/report.json",
+      "--report",
+      "{DIR}/report.md",
+      "--session-label",
+      "first-source",
+      "--session-label",
+      "second-source"
+     ],
+     "exit": 0,
+     "stderr": "",
+     "stdout_empty": true
+    }
+   ],
+   "outputs": [
+    {
+     "path": "report.json",
+     "text": "{\n  \"config_source\": \"settings.json\",\n  \"format\": \"hookdoctor-report/1\",\n  \"hooks\": [\n    {\n      \"class\": \"firing\",\n      \"command\": \"guard-bash.sh\",\n      \"event\": \"PreToolUse\",\n      \"evidence\": {\n        \"effects\": {\n          \"consumed_output\": 0,\n          \"denial\": 1,\n          \"modification\": 0\n        },\n        \"first_ran_at\": \"2026-01-01T09:00:05Z\",\n        \"last_ran_at\": \"2026-01-01T09:00:05Z\",\n        \"matched\": 1,\n        \"ran\": 1\n      },\n      \"hook_type\": \"command\",\n      \"id\": \"PreToolUse:0:0\",\n      \"matcher\": \"Bash\"\n    },\n    {\n      \"class\": \"silent\",\n      \"command\": \"lint-edit.py\",\n      \"event\": \"PreToolUse\",\n      \"evidence\": {\n        \"effects\": {\n          \"consumed_output\": 0,\n          \"denial\": 0,\n          \"modification\": 0\n        },\n        \"first_ran_at\": null,\n        \"last_ran_at\": null,\n        \"matched\": 0,\n        \"ran\": 0\n      },\n      \"hook_type\": \"command\",\n      \"id\": \"PreToolUse:1:0\",\n      \"matcher\": \"Edit|Write\"\n    },\n    {\n      \"class\": \"firing\",\n      \"command\": \"audit-all.sh\",\n      \"event\": \"PreToolUse\",\n      \"evidence\": {\n        \"effects\": {\n          \"consumed_output\": 0,\n          \"denial\": 1,\n          \"modification\": 0\n        },\n        \"first_ran_at\": \"2026-01-01T09:00:05Z\",\n        \"last_ran_at\": \"2026-01-01T09:00:05Z\",\n        \"matched\": 1,\n        \"ran\": 1\n      },\n      \"hook_type\": \"command\",\n      \"id\": \"PreToolUse:2:0\",\n      \"matcher\": \"\"\n    },\n    {\n      \"class\": \"firing-without-effect\",\n      \"command\": \"log-bash.sh\",\n      \"event\": \"PostToolUse\",\n      \"evidence\": {\n        \"effects\": {\n          \"consumed_output\": 0,\n          \"denial\": 0,\n          \"modification\": 0\n        },\n        \"first_ran_at\": \"2026-01-01T09:00:07Z\",\n        \"last_ran_at\": \"2026-01-01T09:00:07Z\",\n        \"matched\": 1,\n        \"ran\": 1\n      },\n      \"hook_type\": \"command\",\n      \"id\": \"PostToolUse:0:0\",\n      \"matcher\": \"Bash\"\n    },\n    {\n      \"class\": \"firing-without-effect\",\n      \"command\": \"note-prompt.sh\",\n      \"event\": \"UserPromptSubmit\",\n      \"evidence\": {\n        \"effects\": {\n          \"consumed_output\": 0,\n          \"denial\": 0,\n          \"modification\": 0\n        },\n        \"first_ran_at\": \"2026-01-01T09:00:00Z\",\n        \"last_ran_at\": \"2026-01-02T10:00:00Z\",\n        \"matched\": 2,\n        \"ran\": 2\n      },\n      \"hook_type\": \"command\",\n      \"id\": \"UserPromptSubmit:0:0\",\n      \"matcher\": null\n    },\n    {\n      \"class\": \"firing-without-effect\",\n      \"command\": \"wrap-up.sh\",\n      \"event\": \"Stop\",\n      \"evidence\": {\n        \"effects\": {\n          \"consumed_output\": 0,\n          \"denial\": 0,\n          \"modification\": 0\n        },\n        \"first_ran_at\": \"2026-01-01T09:01:00Z\",\n        \"last_ran_at\": \"2026-01-02T10:01:00Z\",\n        \"matched\": 2,\n        \"ran\": 2\n      },\n      \"hook_type\": \"command\",\n      \"id\": \"Stop:0:0\",\n      \"matcher\": null\n    }\n  ],\n  \"near_misses\": [],\n  \"session_sources\": [\n    \"first-source\",\n    \"second-source\"\n  ],\n  \"window\": {\n    \"end\": null,\n    \"start\": null\n  }\n}\n"
+    },
+    {
+     "path": "report.md",
+     "text": "# hookdoctor examination\n\nFormat hookdoctor-report/1\nConfiguration source settings.json\nSession sources first-source, second-source\nWindow start None end None\n\n## Hooks\n\n### guard-bash.sh\n\nIdentifier PreToolUse:0:0\nEvent PreToolUse\nMatcher Bash\nClass firing\nMatched 1\nRan 1\nEffects denial 1, modification 0, consumed output 0\nFirst ran at 2026-01-01T09:00:05Z\nLast ran at 2026-01-01T09:00:05Z\n\n### lint-edit.py\n\nIdentifier PreToolUse:1:0\nEvent PreToolUse\nMatcher Edit|Write\nClass silent\nMatched 0\nRan 0\nEffects denial 0, modification 0, consumed output 0\nFirst ran at None\nLast ran at None\n\n### audit-all.sh\n\nIdentifier PreToolUse:2:0\nEvent PreToolUse\nMatcher \nClass firing\nMatched 1\nRan 1\nEffects denial 1, modification 0, consumed output 0\nFirst ran at 2026-01-01T09:00:05Z\nLast ran at 2026-01-01T09:00:05Z\n\n### log-bash.sh\n\nIdentifier PostToolUse:0:0\nEvent PostToolUse\nMatcher Bash\nClass firing-without-effect\nMatched 1\nRan 1\nEffects denial 0, modification 0, consumed output 0\nFirst ran at 2026-01-01T09:00:07Z\nLast ran at 2026-01-01T09:00:07Z\n\n### note-prompt.sh\n\nIdentifier UserPromptSubmit:0:0\nEvent UserPromptSubmit\nMatcher None\nClass firing-without-effect\nMatched 2\nRan 2\nEffects denial 0, modification 0, consumed output 0\nFirst ran at 2026-01-01T09:00:00Z\nLast ran at 2026-01-02T10:00:00Z\n\n### wrap-up.sh\n\nIdentifier Stop:0:0\nEvent Stop\nMatcher None\nClass firing-without-effect\nMatched 2\nRan 2\nEffects denial 0, modification 0, consumed output 0\nFirst ran at 2026-01-01T09:01:00Z\nLast ran at 2026-01-02T10:01:00Z\n\n## Near misses\n\nNone.\n"
+    }
+   ]
+  },
+  {
+   "name": "the label defaults come from the paths",
+   "section": "behaviours",
+   "inputs": [
+    {
+     "path": "nested/hooks-config.json",
+     "text": "{\"hooks\": {\"PreToolUse\": [{\"matcher\": \"Bash\", \"hooks\": [{\"type\": \"command\", \"command\": \"guard-bash.sh\"}]}, {\"matcher\": \"Edit|Write\", \"hooks\": [{\"type\": \"command\", \"command\": \"lint-edit.py\"}]}, {\"matcher\": \"\", \"hooks\": [{\"type\": \"command\", \"command\": \"audit-all.sh\"}]}], \"PostToolUse\": [{\"matcher\": \"Bash\", \"hooks\": [{\"type\": \"command\", \"command\": \"log-bash.sh\"}]}], \"UserPromptSubmit\": [{\"hooks\": [{\"type\": \"command\", \"command\": \"note-prompt.sh\"}]}], \"Stop\": [{\"hooks\": [{\"type\": \"command\", \"command\": \"wrap-up.sh\"}]}]}}"
+    },
+    {
+     "path": "nested/deep/session-a.jsonl",
+     "text": "{\"type\": \"user\", \"timestamp\": \"2026-01-01T09:00:00Z\", \"sessionId\": \"synthetic-session-1\", \"message\": {\"role\": \"user\", \"content\": \"please run the tests\"}}\n{\"type\": \"assistant\", \"timestamp\": \"2026-01-01T09:00:05Z\", \"sessionId\": \"synthetic-session-1\", \"message\": {\"role\": \"assistant\", \"content\": [{\"type\": \"tool_use\", \"id\": \"call-1\", \"name\": \"Bash\", \"input\": {\"command\": \"synthetic\"}}]}}\n{\"type\": \"user\", \"timestamp\": \"2026-01-01T09:00:07Z\", \"sessionId\": \"synthetic-session-1\", \"message\": {\"role\": \"user\", \"content\": [{\"type\": \"tool_result\", \"tool_use_id\": \"call-1\", \"content\": \"denied by policy\", \"is_error\": true}]}}\n{\"type\": \"system\", \"subtype\": \"stop_hook_summary\", \"timestamp\": \"2026-01-01T09:01:00Z\", \"sessionId\": \"synthetic-session-1\", \"hookCount\": 1, \"hookInfos\": [{\"command\": \"wrap-up.sh\"}], \"hookErrors\": [], \"preventedContinuation\": false, \"hasOutput\": false}\n"
+    }
+   ],
+   "steps": [
+    {
+     "argv": [
+      "--config",
+      "{DIR}/nested/hooks-config.json",
+      "--session",
+      "{DIR}/nested/deep/session-a.jsonl",
+      "--output",
+      "{DIR}/report.json",
+      "--report",
+      "{DIR}/report.md"
+     ],
+     "exit": 0,
+     "stderr": "",
+     "stdout_empty": true
+    }
+   ],
+   "outputs": [
+    {
+     "path": "report.json",
+     "text": "{\n  \"config_source\": \"hooks-config.json\",\n  \"format\": \"hookdoctor-report/1\",\n  \"hooks\": [\n    {\n      \"class\": \"firing\",\n      \"command\": \"guard-bash.sh\",\n      \"event\": \"PreToolUse\",\n      \"evidence\": {\n        \"effects\": {\n          \"consumed_output\": 0,\n          \"denial\": 1,\n          \"modification\": 0\n        },\n        \"first_ran_at\": \"2026-01-01T09:00:05Z\",\n        \"last_ran_at\": \"2026-01-01T09:00:05Z\",\n        \"matched\": 1,\n        \"ran\": 1\n      },\n      \"hook_type\": \"command\",\n      \"id\": \"PreToolUse:0:0\",\n      \"matcher\": \"Bash\"\n    },\n    {\n      \"class\": \"silent\",\n      \"command\": \"lint-edit.py\",\n      \"event\": \"PreToolUse\",\n      \"evidence\": {\n        \"effects\": {\n          \"consumed_output\": 0,\n          \"denial\": 0,\n          \"modification\": 0\n        },\n        \"first_ran_at\": null,\n        \"last_ran_at\": null,\n        \"matched\": 0,\n        \"ran\": 0\n      },\n      \"hook_type\": \"command\",\n      \"id\": \"PreToolUse:1:0\",\n      \"matcher\": \"Edit|Write\"\n    },\n    {\n      \"class\": \"firing\",\n      \"command\": \"audit-all.sh\",\n      \"event\": \"PreToolUse\",\n      \"evidence\": {\n        \"effects\": {\n          \"consumed_output\": 0,\n          \"denial\": 1,\n          \"modification\": 0\n        },\n        \"first_ran_at\": \"2026-01-01T09:00:05Z\",\n        \"last_ran_at\": \"2026-01-01T09:00:05Z\",\n        \"matched\": 1,\n        \"ran\": 1\n      },\n      \"hook_type\": \"command\",\n      \"id\": \"PreToolUse:2:0\",\n      \"matcher\": \"\"\n    },\n    {\n      \"class\": \"firing-without-effect\",\n      \"command\": \"log-bash.sh\",\n      \"event\": \"PostToolUse\",\n      \"evidence\": {\n        \"effects\": {\n          \"consumed_output\": 0,\n          \"denial\": 0,\n          \"modification\": 0\n        },\n        \"first_ran_at\": \"2026-01-01T09:00:07Z\",\n        \"last_ran_at\": \"2026-01-01T09:00:07Z\",\n        \"matched\": 1,\n        \"ran\": 1\n      },\n      \"hook_type\": \"command\",\n      \"id\": \"PostToolUse:0:0\",\n      \"matcher\": \"Bash\"\n    },\n    {\n      \"class\": \"firing-without-effect\",\n      \"command\": \"note-prompt.sh\",\n      \"event\": \"UserPromptSubmit\",\n      \"evidence\": {\n        \"effects\": {\n          \"consumed_output\": 0,\n          \"denial\": 0,\n          \"modification\": 0\n        },\n        \"first_ran_at\": \"2026-01-01T09:00:00Z\",\n        \"last_ran_at\": \"2026-01-01T09:00:00Z\",\n        \"matched\": 1,\n        \"ran\": 1\n      },\n      \"hook_type\": \"command\",\n      \"id\": \"UserPromptSubmit:0:0\",\n      \"matcher\": null\n    },\n    {\n      \"class\": \"firing-without-effect\",\n      \"command\": \"wrap-up.sh\",\n      \"event\": \"Stop\",\n      \"evidence\": {\n        \"effects\": {\n          \"consumed_output\": 0,\n          \"denial\": 0,\n          \"modification\": 0\n        },\n        \"first_ran_at\": \"2026-01-01T09:01:00Z\",\n        \"last_ran_at\": \"2026-01-01T09:01:00Z\",\n        \"matched\": 1,\n        \"ran\": 1\n      },\n      \"hook_type\": \"command\",\n      \"id\": \"Stop:0:0\",\n      \"matcher\": null\n    }\n  ],\n  \"near_misses\": [],\n  \"session_sources\": [\n    \"session-a.jsonl\"\n  ],\n  \"window\": {\n    \"end\": null,\n    \"start\": null\n  }\n}\n"
+    },
+    {
+     "path": "report.md",
+     "text": "# hookdoctor examination\n\nFormat hookdoctor-report/1\nConfiguration source hooks-config.json\nSession sources session-a.jsonl\nWindow start None end None\n\n## Hooks\n\n### guard-bash.sh\n\nIdentifier PreToolUse:0:0\nEvent PreToolUse\nMatcher Bash\nClass firing\nMatched 1\nRan 1\nEffects denial 1, modification 0, consumed output 0\nFirst ran at 2026-01-01T09:00:05Z\nLast ran at 2026-01-01T09:00:05Z\n\n### lint-edit.py\n\nIdentifier PreToolUse:1:0\nEvent PreToolUse\nMatcher Edit|Write\nClass silent\nMatched 0\nRan 0\nEffects denial 0, modification 0, consumed output 0\nFirst ran at None\nLast ran at None\n\n### audit-all.sh\n\nIdentifier PreToolUse:2:0\nEvent PreToolUse\nMatcher \nClass firing\nMatched 1\nRan 1\nEffects denial 1, modification 0, consumed output 0\nFirst ran at 2026-01-01T09:00:05Z\nLast ran at 2026-01-01T09:00:05Z\n\n### log-bash.sh\n\nIdentifier PostToolUse:0:0\nEvent PostToolUse\nMatcher Bash\nClass firing-without-effect\nMatched 1\nRan 1\nEffects denial 0, modification 0, consumed output 0\nFirst ran at 2026-01-01T09:00:07Z\nLast ran at 2026-01-01T09:00:07Z\n\n### note-prompt.sh\n\nIdentifier UserPromptSubmit:0:0\nEvent UserPromptSubmit\nMatcher None\nClass firing-without-effect\nMatched 1\nRan 1\nEffects denial 0, modification 0, consumed output 0\nFirst ran at 2026-01-01T09:00:00Z\nLast ran at 2026-01-01T09:00:00Z\n\n### wrap-up.sh\n\nIdentifier Stop:0:0\nEvent Stop\nMatcher None\nClass firing-without-effect\nMatched 1\nRan 1\nEffects denial 0, modification 0, consumed output 0\nFirst ran at 2026-01-01T09:01:00Z\nLast ran at 2026-01-01T09:01:00Z\n\n## Near misses\n\nNone.\n"
+    }
+   ]
+  },
+  {
+   "name": "a session path whose name carries a backslash",
+   "section": "behaviours",
+   "inputs": [
+    {
+     "path": "settings.json",
+     "text": "{\"hooks\": {\"PreToolUse\": [{\"matcher\": \"Bash\", \"hooks\": [{\"type\": \"command\", \"command\": \"guard-bash.sh\"}]}, {\"matcher\": \"Edit|Write\", \"hooks\": [{\"type\": \"command\", \"command\": \"lint-edit.py\"}]}, {\"matcher\": \"\", \"hooks\": [{\"type\": \"command\", \"command\": \"audit-all.sh\"}]}], \"PostToolUse\": [{\"matcher\": \"Bash\", \"hooks\": [{\"type\": \"command\", \"command\": \"log-bash.sh\"}]}], \"UserPromptSubmit\": [{\"hooks\": [{\"type\": \"command\", \"command\": \"note-prompt.sh\"}]}], \"Stop\": [{\"hooks\": [{\"type\": \"command\", \"command\": \"wrap-up.sh\"}]}]}}"
+    },
+    {
+     "path": "back\\slash.jsonl",
+     "text": "{\"type\": \"user\", \"timestamp\": \"2026-01-01T09:00:00Z\", \"sessionId\": \"synthetic-session-1\", \"message\": {\"role\": \"user\", \"content\": \"please run the tests\"}}\n{\"type\": \"assistant\", \"timestamp\": \"2026-01-01T09:00:05Z\", \"sessionId\": \"synthetic-session-1\", \"message\": {\"role\": \"assistant\", \"content\": [{\"type\": \"tool_use\", \"id\": \"call-1\", \"name\": \"Bash\", \"input\": {\"command\": \"synthetic\"}}]}}\n{\"type\": \"user\", \"timestamp\": \"2026-01-01T09:00:07Z\", \"sessionId\": \"synthetic-session-1\", \"message\": {\"role\": \"user\", \"content\": [{\"type\": \"tool_result\", \"tool_use_id\": \"call-1\", \"content\": \"denied by policy\", \"is_error\": true}]}}\n{\"type\": \"system\", \"subtype\": \"stop_hook_summary\", \"timestamp\": \"2026-01-01T09:01:00Z\", \"sessionId\": \"synthetic-session-1\", \"hookCount\": 1, \"hookInfos\": [{\"command\": \"wrap-up.sh\"}], \"hookErrors\": [], \"preventedContinuation\": false, \"hasOutput\": false}\n"
+    }
+   ],
+   "steps": [
+    {
+     "argv": [
+      "--config",
+      "{DIR}/settings.json",
+      "--session",
+      "{DIR}/back\\slash.jsonl",
+      "--output",
+      "{DIR}/report.json",
+      "--report",
+      "{DIR}/report.md"
+     ],
+     "exit": 0,
+     "stderr": "",
+     "stdout_empty": true
+    }
+   ],
+   "outputs": [
+    {
+     "path": "report.json",
+     "text": "{\n  \"config_source\": \"settings.json\",\n  \"format\": \"hookdoctor-report/1\",\n  \"hooks\": [\n    {\n      \"class\": \"firing\",\n      \"command\": \"guard-bash.sh\",\n      \"event\": \"PreToolUse\",\n      \"evidence\": {\n        \"effects\": {\n          \"consumed_output\": 0,\n          \"denial\": 1,\n          \"modification\": 0\n        },\n        \"first_ran_at\": \"2026-01-01T09:00:05Z\",\n        \"last_ran_at\": \"2026-01-01T09:00:05Z\",\n        \"matched\": 1,\n        \"ran\": 1\n      },\n      \"hook_type\": \"command\",\n      \"id\": \"PreToolUse:0:0\",\n      \"matcher\": \"Bash\"\n    },\n    {\n      \"class\": \"silent\",\n      \"command\": \"lint-edit.py\",\n      \"event\": \"PreToolUse\",\n      \"evidence\": {\n        \"effects\": {\n          \"consumed_output\": 0,\n          \"denial\": 0,\n          \"modification\": 0\n        },\n        \"first_ran_at\": null,\n        \"last_ran_at\": null,\n        \"matched\": 0,\n        \"ran\": 0\n      },\n      \"hook_type\": \"command\",\n      \"id\": \"PreToolUse:1:0\",\n      \"matcher\": \"Edit|Write\"\n    },\n    {\n      \"class\": \"firing\",\n      \"command\": \"audit-all.sh\",\n      \"event\": \"PreToolUse\",\n      \"evidence\": {\n        \"effects\": {\n          \"consumed_output\": 0,\n          \"denial\": 1,\n          \"modification\": 0\n        },\n        \"first_ran_at\": \"2026-01-01T09:00:05Z\",\n        \"last_ran_at\": \"2026-01-01T09:00:05Z\",\n        \"matched\": 1,\n        \"ran\": 1\n      },\n      \"hook_type\": \"command\",\n      \"id\": \"PreToolUse:2:0\",\n      \"matcher\": \"\"\n    },\n    {\n      \"class\": \"firing-without-effect\",\n      \"command\": \"log-bash.sh\",\n      \"event\": \"PostToolUse\",\n      \"evidence\": {\n        \"effects\": {\n          \"consumed_output\": 0,\n          \"denial\": 0,\n          \"modification\": 0\n        },\n        \"first_ran_at\": \"2026-01-01T09:00:07Z\",\n        \"last_ran_at\": \"2026-01-01T09:00:07Z\",\n        \"matched\": 1,\n        \"ran\": 1\n      },\n      \"hook_type\": \"command\",\n      \"id\": \"PostToolUse:0:0\",\n      \"matcher\": \"Bash\"\n    },\n    {\n      \"class\": \"firing-without-effect\",\n      \"command\": \"note-prompt.sh\",\n      \"event\": \"UserPromptSubmit\",\n      \"evidence\": {\n        \"effects\": {\n          \"consumed_output\": 0,\n          \"denial\": 0,\n          \"modification\": 0\n        },\n        \"first_ran_at\": \"2026-01-01T09:00:00Z\",\n        \"last_ran_at\": \"2026-01-01T09:00:00Z\",\n        \"matched\": 1,\n        \"ran\": 1\n      },\n      \"hook_type\": \"command\",\n      \"id\": \"UserPromptSubmit:0:0\",\n      \"matcher\": null\n    },\n    {\n      \"class\": \"firing-without-effect\",\n      \"command\": \"wrap-up.sh\",\n      \"event\": \"Stop\",\n      \"evidence\": {\n        \"effects\": {\n          \"consumed_output\": 0,\n          \"denial\": 0,\n          \"modification\": 0\n        },\n        \"first_ran_at\": \"2026-01-01T09:01:00Z\",\n        \"last_ran_at\": \"2026-01-01T09:01:00Z\",\n        \"matched\": 1,\n        \"ran\": 1\n      },\n      \"hook_type\": \"command\",\n      \"id\": \"Stop:0:0\",\n      \"matcher\": null\n    }\n  ],\n  \"near_misses\": [],\n  \"session_sources\": [\n    \"back\\\\slash.jsonl\"\n  ],\n  \"window\": {\n    \"end\": null,\n    \"start\": null\n  }\n}\n"
+    },
+    {
+     "path": "report.md",
+     "text": "# hookdoctor examination\n\nFormat hookdoctor-report/1\nConfiguration source settings.json\nSession sources back\\slash.jsonl\nWindow start None end None\n\n## Hooks\n\n### guard-bash.sh\n\nIdentifier PreToolUse:0:0\nEvent PreToolUse\nMatcher Bash\nClass firing\nMatched 1\nRan 1\nEffects denial 1, modification 0, consumed output 0\nFirst ran at 2026-01-01T09:00:05Z\nLast ran at 2026-01-01T09:00:05Z\n\n### lint-edit.py\n\nIdentifier PreToolUse:1:0\nEvent PreToolUse\nMatcher Edit|Write\nClass silent\nMatched 0\nRan 0\nEffects denial 0, modification 0, consumed output 0\nFirst ran at None\nLast ran at None\n\n### audit-all.sh\n\nIdentifier PreToolUse:2:0\nEvent PreToolUse\nMatcher \nClass firing\nMatched 1\nRan 1\nEffects denial 1, modification 0, consumed output 0\nFirst ran at 2026-01-01T09:00:05Z\nLast ran at 2026-01-01T09:00:05Z\n\n### log-bash.sh\n\nIdentifier PostToolUse:0:0\nEvent PostToolUse\nMatcher Bash\nClass firing-without-effect\nMatched 1\nRan 1\nEffects denial 0, modification 0, consumed output 0\nFirst ran at 2026-01-01T09:00:07Z\nLast ran at 2026-01-01T09:00:07Z\n\n### note-prompt.sh\n\nIdentifier UserPromptSubmit:0:0\nEvent UserPromptSubmit\nMatcher None\nClass firing-without-effect\nMatched 1\nRan 1\nEffects denial 0, modification 0, consumed output 0\nFirst ran at 2026-01-01T09:00:00Z\nLast ran at 2026-01-01T09:00:00Z\n\n### wrap-up.sh\n\nIdentifier Stop:0:0\nEvent Stop\nMatcher None\nClass firing-without-effect\nMatched 1\nRan 1\nEffects denial 0, modification 0, consumed output 0\nFirst ran at 2026-01-01T09:01:00Z\nLast ran at 2026-01-01T09:01:00Z\n\n## Near misses\n\nNone.\n"
+    }
+   ]
+  },
+  {
+   "name": "the same key in different objects is accepted",
+   "section": "behaviours",
+   "inputs": [
+    {
+     "path": "settings.json",
+     "text": "{\"hooks\": {\"PreToolUse\": [{\"matcher\": \"Bash\", \"hooks\": [{\"type\": \"command\", \"command\": \"one.sh\"}]}, {\"matcher\": \"Edit\", \"hooks\": [{\"type\": \"command\", \"command\": \"two.sh\"}]}]}}"
+    },
+    {
+     "path": "session.jsonl",
+     "text": "{\"type\": \"user\", \"timestamp\": \"2026-01-01T09:00:00Z\", \"sessionId\": \"synthetic-session-1\", \"message\": {\"role\": \"user\", \"content\": \"please run the tests\"}}\n{\"type\": \"assistant\", \"timestamp\": \"2026-01-01T09:00:05Z\", \"sessionId\": \"synthetic-session-1\", \"message\": {\"role\": \"assistant\", \"content\": [{\"type\": \"tool_use\", \"id\": \"call-1\", \"name\": \"Bash\", \"input\": {\"command\": \"synthetic\"}}]}}\n{\"type\": \"user\", \"timestamp\": \"2026-01-01T09:00:07Z\", \"sessionId\": \"synthetic-session-1\", \"message\": {\"role\": \"user\", \"content\": [{\"type\": \"tool_result\", \"tool_use_id\": \"call-1\", \"content\": \"denied by policy\", \"is_error\": true}]}}\n{\"type\": \"system\", \"subtype\": \"stop_hook_summary\", \"timestamp\": \"2026-01-01T09:01:00Z\", \"sessionId\": \"synthetic-session-1\", \"hookCount\": 1, \"hookInfos\": [{\"command\": \"wrap-up.sh\"}], \"hookErrors\": [], \"preventedContinuation\": false, \"hasOutput\": false}\n"
+    }
+   ],
+   "steps": [
+    {
+     "argv": [
+      "--config",
+      "{DIR}/settings.json",
+      "--session",
+      "{DIR}/session.jsonl",
+      "--output",
+      "{DIR}/report.json",
+      "--report",
+      "{DIR}/report.md"
+     ],
+     "exit": 0,
+     "stderr": "",
+     "stdout_empty": true
+    }
+   ],
+   "outputs": [
+    {
+     "path": "report.json",
+     "text": "{\n  \"config_source\": \"settings.json\",\n  \"format\": \"hookdoctor-report/1\",\n  \"hooks\": [\n    {\n      \"class\": \"firing\",\n      \"command\": \"one.sh\",\n      \"event\": \"PreToolUse\",\n      \"evidence\": {\n        \"effects\": {\n          \"consumed_output\": 0,\n          \"denial\": 1,\n          \"modification\": 0\n        },\n        \"first_ran_at\": \"2026-01-01T09:00:05Z\",\n        \"last_ran_at\": \"2026-01-01T09:00:05Z\",\n        \"matched\": 1,\n        \"ran\": 1\n      },\n      \"hook_type\": \"command\",\n      \"id\": \"PreToolUse:0:0\",\n      \"matcher\": \"Bash\"\n    },\n    {\n      \"class\": \"silent\",\n      \"command\": \"two.sh\",\n      \"event\": \"PreToolUse\",\n      \"evidence\": {\n        \"effects\": {\n          \"consumed_output\": 0,\n          \"denial\": 0,\n          \"modification\": 0\n        },\n        \"first_ran_at\": null,\n        \"last_ran_at\": null,\n        \"matched\": 0,\n        \"ran\": 0\n      },\n      \"hook_type\": \"command\",\n      \"id\": \"PreToolUse:1:0\",\n      \"matcher\": \"Edit\"\n    }\n  ],\n  \"near_misses\": [],\n  \"session_sources\": [\n    \"session.jsonl\"\n  ],\n  \"window\": {\n    \"end\": null,\n    \"start\": null\n  }\n}\n"
+    },
+    {
+     "path": "report.md",
+     "text": "# hookdoctor examination\n\nFormat hookdoctor-report/1\nConfiguration source settings.json\nSession sources session.jsonl\nWindow start None end None\n\n## Hooks\n\n### one.sh\n\nIdentifier PreToolUse:0:0\nEvent PreToolUse\nMatcher Bash\nClass firing\nMatched 1\nRan 1\nEffects denial 1, modification 0, consumed output 0\nFirst ran at 2026-01-01T09:00:05Z\nLast ran at 2026-01-01T09:00:05Z\n\n### two.sh\n\nIdentifier PreToolUse:1:0\nEvent PreToolUse\nMatcher Edit\nClass silent\nMatched 0\nRan 0\nEffects denial 0, modification 0, consumed output 0\nFirst ran at None\nLast ran at None\n\n## Near misses\n\nNone.\n"
+    }
+   ]
+  },
+  {
+   "name": "the window standing open",
+   "section": "behaviours",
+   "inputs": [
+    {
+     "path": "settings.json",
+     "text": "{\"hooks\": {\"PreToolUse\": [{\"matcher\": \"Bash\", \"hooks\": [{\"type\": \"command\", \"command\": \"guard-bash.sh\"}]}, {\"matcher\": \"Edit|Write\", \"hooks\": [{\"type\": \"command\", \"command\": \"lint-edit.py\"}]}, {\"matcher\": \"\", \"hooks\": [{\"type\": \"command\", \"command\": \"audit-all.sh\"}]}], \"PostToolUse\": [{\"matcher\": \"Bash\", \"hooks\": [{\"type\": \"command\", \"command\": \"log-bash.sh\"}]}], \"UserPromptSubmit\": [{\"hooks\": [{\"type\": \"command\", \"command\": \"note-prompt.sh\"}]}], \"Stop\": [{\"hooks\": [{\"type\": \"command\", \"command\": \"wrap-up.sh\"}]}]}}"
+    },
+    {
+     "path": "session.jsonl",
+     "text": "{\"type\": \"user\", \"timestamp\": \"2026-01-01T09:00:00Z\", \"sessionId\": \"synthetic-session-1\", \"message\": {\"role\": \"user\", \"content\": \"please run the tests\"}}\n{\"type\": \"assistant\", \"timestamp\": \"2026-01-01T09:00:05Z\", \"sessionId\": \"synthetic-session-1\", \"message\": {\"role\": \"assistant\", \"content\": [{\"type\": \"tool_use\", \"id\": \"call-1\", \"name\": \"Bash\", \"input\": {\"command\": \"synthetic\"}}]}}\n{\"type\": \"user\", \"timestamp\": \"2026-01-01T09:00:07Z\", \"sessionId\": \"synthetic-session-1\", \"message\": {\"role\": \"user\", \"content\": [{\"type\": \"tool_result\", \"tool_use_id\": \"call-1\", \"content\": \"denied by policy\", \"is_error\": true}]}}\n{\"type\": \"system\", \"subtype\": \"stop_hook_summary\", \"timestamp\": \"2026-01-01T09:01:00Z\", \"sessionId\": \"synthetic-session-1\", \"hookCount\": 1, \"hookInfos\": [{\"command\": \"wrap-up.sh\"}], \"hookErrors\": [], \"preventedContinuation\": false, \"hasOutput\": false}\n"
+    }
+   ],
+   "steps": [
+    {
+     "argv": [
+      "--config",
+      "{DIR}/settings.json",
+      "--session",
+      "{DIR}/session.jsonl",
+      "--output",
+      "{DIR}/report.json",
+      "--report",
+      "{DIR}/report.md",
+      "--window-start",
+      "2026-01-01T09:00:30Z"
+     ],
+     "exit": 0,
+     "stderr": "",
+     "stdout_empty": true
+    }
+   ],
+   "outputs": [
+    {
+     "path": "report.json",
+     "text": "{\n  \"config_source\": \"settings.json\",\n  \"format\": \"hookdoctor-report/1\",\n  \"hooks\": [\n    {\n      \"class\": \"silent\",\n      \"command\": \"guard-bash.sh\",\n      \"event\": \"PreToolUse\",\n      \"evidence\": {\n        \"effects\": {\n          \"consumed_output\": 0,\n          \"denial\": 0,\n          \"modification\": 0\n        },\n        \"first_ran_at\": null,\n        \"last_ran_at\": null,\n        \"matched\": 0,\n        \"ran\": 0\n      },\n      \"hook_type\": \"command\",\n      \"id\": \"PreToolUse:0:0\",\n      \"matcher\": \"Bash\"\n    },\n    {\n      \"class\": \"silent\",\n      \"command\": \"lint-edit.py\",\n      \"event\": \"PreToolUse\",\n      \"evidence\": {\n        \"effects\": {\n          \"consumed_output\": 0,\n          \"denial\": 0,\n          \"modification\": 0\n        },\n        \"first_ran_at\": null,\n        \"last_ran_at\": null,\n        \"matched\": 0,\n        \"ran\": 0\n      },\n      \"hook_type\": \"command\",\n      \"id\": \"PreToolUse:1:0\",\n      \"matcher\": \"Edit|Write\"\n    },\n    {\n      \"class\": \"silent\",\n      \"command\": \"audit-all.sh\",\n      \"event\": \"PreToolUse\",\n      \"evidence\": {\n        \"effects\": {\n          \"consumed_output\": 0,\n          \"denial\": 0,\n          \"modification\": 0\n        },\n        \"first_ran_at\": null,\n        \"last_ran_at\": null,\n        \"matched\": 0,\n        \"ran\": 0\n      },\n      \"hook_type\": \"command\",\n      \"id\": \"PreToolUse:2:0\",\n      \"matcher\": \"\"\n    },\n    {\n      \"class\": \"silent\",\n      \"command\": \"log-bash.sh\",\n      \"event\": \"PostToolUse\",\n      \"evidence\": {\n        \"effects\": {\n          \"consumed_output\": 0,\n          \"denial\": 0,\n          \"modification\": 0\n        },\n        \"first_ran_at\": null,\n        \"last_ran_at\": null,\n        \"matched\": 0,\n        \"ran\": 0\n      },\n      \"hook_type\": \"command\",\n      \"id\": \"PostToolUse:0:0\",\n      \"matcher\": \"Bash\"\n    },\n    {\n      \"class\": \"silent\",\n      \"command\": \"note-prompt.sh\",\n      \"event\": \"UserPromptSubmit\",\n      \"evidence\": {\n        \"effects\": {\n          \"consumed_output\": 0,\n          \"denial\": 0,\n          \"modification\": 0\n        },\n        \"first_ran_at\": null,\n        \"last_ran_at\": null,\n        \"matched\": 0,\n        \"ran\": 0\n      },\n      \"hook_type\": \"command\",\n      \"id\": \"UserPromptSubmit:0:0\",\n      \"matcher\": null\n    },\n    {\n      \"class\": \"firing-without-effect\",\n      \"command\": \"wrap-up.sh\",\n      \"event\": \"Stop\",\n      \"evidence\": {\n        \"effects\": {\n          \"consumed_output\": 0,\n          \"denial\": 0,\n          \"modification\": 0\n        },\n        \"first_ran_at\": \"2026-01-01T09:01:00Z\",\n        \"last_ran_at\": \"2026-01-01T09:01:00Z\",\n        \"matched\": 1,\n        \"ran\": 1\n      },\n      \"hook_type\": \"command\",\n      \"id\": \"Stop:0:0\",\n      \"matcher\": null\n    }\n  ],\n  \"near_misses\": [],\n  \"session_sources\": [\n    \"session.jsonl\"\n  ],\n  \"window\": {\n    \"end\": null,\n    \"start\": \"2026-01-01T09:00:30Z\"\n  }\n}\n"
+    },
+    {
+     "path": "report.md",
+     "text": "# hookdoctor examination\n\nFormat hookdoctor-report/1\nConfiguration source settings.json\nSession sources session.jsonl\nWindow start 2026-01-01T09:00:30Z end None\n\n## Hooks\n\n### guard-bash.sh\n\nIdentifier PreToolUse:0:0\nEvent PreToolUse\nMatcher Bash\nClass silent\nMatched 0\nRan 0\nEffects denial 0, modification 0, consumed output 0\nFirst ran at None\nLast ran at None\n\n### lint-edit.py\n\nIdentifier PreToolUse:1:0\nEvent PreToolUse\nMatcher Edit|Write\nClass silent\nMatched 0\nRan 0\nEffects denial 0, modification 0, consumed output 0\nFirst ran at None\nLast ran at None\n\n### audit-all.sh\n\nIdentifier PreToolUse:2:0\nEvent PreToolUse\nMatcher \nClass silent\nMatched 0\nRan 0\nEffects denial 0, modification 0, consumed output 0\nFirst ran at None\nLast ran at None\n\n### log-bash.sh\n\nIdentifier PostToolUse:0:0\nEvent PostToolUse\nMatcher Bash\nClass silent\nMatched 0\nRan 0\nEffects denial 0, modification 0, consumed output 0\nFirst ran at None\nLast ran at None\n\n### note-prompt.sh\n\nIdentifier UserPromptSubmit:0:0\nEvent UserPromptSubmit\nMatcher None\nClass silent\nMatched 0\nRan 0\nEffects denial 0, modification 0, consumed output 0\nFirst ran at None\nLast ran at None\n\n### wrap-up.sh\n\nIdentifier Stop:0:0\nEvent Stop\nMatcher None\nClass firing-without-effect\nMatched 1\nRan 1\nEffects denial 0, modification 0, consumed output 0\nFirst ran at 2026-01-01T09:01:00Z\nLast ran at 2026-01-01T09:01:00Z\n\n## Near misses\n\nNone.\n"
+    }
+   ]
+  },
+  {
+   "name": "the window standing closed",
+   "section": "behaviours",
+   "inputs": [
+    {
+     "path": "settings.json",
+     "text": "{\"hooks\": {\"PreToolUse\": [{\"matcher\": \"Bash\", \"hooks\": [{\"type\": \"command\", \"command\": \"guard-bash.sh\"}]}, {\"matcher\": \"Edit|Write\", \"hooks\": [{\"type\": \"command\", \"command\": \"lint-edit.py\"}]}, {\"matcher\": \"\", \"hooks\": [{\"type\": \"command\", \"command\": \"audit-all.sh\"}]}], \"PostToolUse\": [{\"matcher\": \"Bash\", \"hooks\": [{\"type\": \"command\", \"command\": \"log-bash.sh\"}]}], \"UserPromptSubmit\": [{\"hooks\": [{\"type\": \"command\", \"command\": \"note-prompt.sh\"}]}], \"Stop\": [{\"hooks\": [{\"type\": \"command\", \"command\": \"wrap-up.sh\"}]}]}}"
+    },
+    {
+     "path": "session.jsonl",
+     "text": "{\"type\": \"user\", \"timestamp\": \"2026-01-01T09:00:00Z\", \"sessionId\": \"synthetic-session-1\", \"message\": {\"role\": \"user\", \"content\": \"please run the tests\"}}\n{\"type\": \"assistant\", \"timestamp\": \"2026-01-01T09:00:05Z\", \"sessionId\": \"synthetic-session-1\", \"message\": {\"role\": \"assistant\", \"content\": [{\"type\": \"tool_use\", \"id\": \"call-1\", \"name\": \"Bash\", \"input\": {\"command\": \"synthetic\"}}]}}\n{\"type\": \"user\", \"timestamp\": \"2026-01-01T09:00:07Z\", \"sessionId\": \"synthetic-session-1\", \"message\": {\"role\": \"user\", \"content\": [{\"type\": \"tool_result\", \"tool_use_id\": \"call-1\", \"content\": \"denied by policy\", \"is_error\": true}]}}\n{\"type\": \"system\", \"subtype\": \"stop_hook_summary\", \"timestamp\": \"2026-01-01T09:01:00Z\", \"sessionId\": \"synthetic-session-1\", \"hookCount\": 1, \"hookInfos\": [{\"command\": \"wrap-up.sh\"}], \"hookErrors\": [], \"preventedContinuation\": false, \"hasOutput\": false}\n"
+    }
+   ],
+   "steps": [
+    {
+     "argv": [
+      "--config",
+      "{DIR}/settings.json",
+      "--session",
+      "{DIR}/session.jsonl",
+      "--output",
+      "{DIR}/report.json",
+      "--report",
+      "{DIR}/report.md",
+      "--window-start",
+      "2026-01-01T08:00:00Z",
+      "--window-end",
+      "2026-01-01T10:00:00Z"
+     ],
+     "exit": 0,
+     "stderr": "",
+     "stdout_empty": true
+    }
+   ],
+   "outputs": [
+    {
+     "path": "report.json",
+     "text": "{\n  \"config_source\": \"settings.json\",\n  \"format\": \"hookdoctor-report/1\",\n  \"hooks\": [\n    {\n      \"class\": \"firing\",\n      \"command\": \"guard-bash.sh\",\n      \"event\": \"PreToolUse\",\n      \"evidence\": {\n        \"effects\": {\n          \"consumed_output\": 0,\n          \"denial\": 1,\n          \"modification\": 0\n        },\n        \"first_ran_at\": \"2026-01-01T09:00:05Z\",\n        \"last_ran_at\": \"2026-01-01T09:00:05Z\",\n        \"matched\": 1,\n        \"ran\": 1\n      },\n      \"hook_type\": \"command\",\n      \"id\": \"PreToolUse:0:0\",\n      \"matcher\": \"Bash\"\n    },\n    {\n      \"class\": \"silent\",\n      \"command\": \"lint-edit.py\",\n      \"event\": \"PreToolUse\",\n      \"evidence\": {\n        \"effects\": {\n          \"consumed_output\": 0,\n          \"denial\": 0,\n          \"modification\": 0\n        },\n        \"first_ran_at\": null,\n        \"last_ran_at\": null,\n        \"matched\": 0,\n        \"ran\": 0\n      },\n      \"hook_type\": \"command\",\n      \"id\": \"PreToolUse:1:0\",\n      \"matcher\": \"Edit|Write\"\n    },\n    {\n      \"class\": \"firing\",\n      \"command\": \"audit-all.sh\",\n      \"event\": \"PreToolUse\",\n      \"evidence\": {\n        \"effects\": {\n          \"consumed_output\": 0,\n          \"denial\": 1,\n          \"modification\": 0\n        },\n        \"first_ran_at\": \"2026-01-01T09:00:05Z\",\n        \"last_ran_at\": \"2026-01-01T09:00:05Z\",\n        \"matched\": 1,\n        \"ran\": 1\n      },\n      \"hook_type\": \"command\",\n      \"id\": \"PreToolUse:2:0\",\n      \"matcher\": \"\"\n    },\n    {\n      \"class\": \"firing-without-effect\",\n      \"command\": \"log-bash.sh\",\n      \"event\": \"PostToolUse\",\n      \"evidence\": {\n        \"effects\": {\n          \"consumed_output\": 0,\n          \"denial\": 0,\n          \"modification\": 0\n        },\n        \"first_ran_at\": \"2026-01-01T09:00:07Z\",\n        \"last_ran_at\": \"2026-01-01T09:00:07Z\",\n        \"matched\": 1,\n        \"ran\": 1\n      },\n      \"hook_type\": \"command\",\n      \"id\": \"PostToolUse:0:0\",\n      \"matcher\": \"Bash\"\n    },\n    {\n      \"class\": \"firing-without-effect\",\n      \"command\": \"note-prompt.sh\",\n      \"event\": \"UserPromptSubmit\",\n      \"evidence\": {\n        \"effects\": {\n          \"consumed_output\": 0,\n          \"denial\": 0,\n          \"modification\": 0\n        },\n        \"first_ran_at\": \"2026-01-01T09:00:00Z\",\n        \"last_ran_at\": \"2026-01-01T09:00:00Z\",\n        \"matched\": 1,\n        \"ran\": 1\n      },\n      \"hook_type\": \"command\",\n      \"id\": \"UserPromptSubmit:0:0\",\n      \"matcher\": null\n    },\n    {\n      \"class\": \"firing-without-effect\",\n      \"command\": \"wrap-up.sh\",\n      \"event\": \"Stop\",\n      \"evidence\": {\n        \"effects\": {\n          \"consumed_output\": 0,\n          \"denial\": 0,\n          \"modification\": 0\n        },\n        \"first_ran_at\": \"2026-01-01T09:01:00Z\",\n        \"last_ran_at\": \"2026-01-01T09:01:00Z\",\n        \"matched\": 1,\n        \"ran\": 1\n      },\n      \"hook_type\": \"command\",\n      \"id\": \"Stop:0:0\",\n      \"matcher\": null\n    }\n  ],\n  \"near_misses\": [],\n  \"session_sources\": [\n    \"session.jsonl\"\n  ],\n  \"window\": {\n    \"end\": \"2026-01-01T10:00:00Z\",\n    \"start\": \"2026-01-01T08:00:00Z\"\n  }\n}\n"
+    },
+    {
+     "path": "report.md",
+     "text": "# hookdoctor examination\n\nFormat hookdoctor-report/1\nConfiguration source settings.json\nSession sources session.jsonl\nWindow start 2026-01-01T08:00:00Z end 2026-01-01T10:00:00Z\n\n## Hooks\n\n### guard-bash.sh\n\nIdentifier PreToolUse:0:0\nEvent PreToolUse\nMatcher Bash\nClass firing\nMatched 1\nRan 1\nEffects denial 1, modification 0, consumed output 0\nFirst ran at 2026-01-01T09:00:05Z\nLast ran at 2026-01-01T09:00:05Z\n\n### lint-edit.py\n\nIdentifier PreToolUse:1:0\nEvent PreToolUse\nMatcher Edit|Write\nClass silent\nMatched 0\nRan 0\nEffects denial 0, modification 0, consumed output 0\nFirst ran at None\nLast ran at None\n\n### audit-all.sh\n\nIdentifier PreToolUse:2:0\nEvent PreToolUse\nMatcher \nClass firing\nMatched 1\nRan 1\nEffects denial 1, modification 0, consumed output 0\nFirst ran at 2026-01-01T09:00:05Z\nLast ran at 2026-01-01T09:00:05Z\n\n### log-bash.sh\n\nIdentifier PostToolUse:0:0\nEvent PostToolUse\nMatcher Bash\nClass firing-without-effect\nMatched 1\nRan 1\nEffects denial 0, modification 0, consumed output 0\nFirst ran at 2026-01-01T09:00:07Z\nLast ran at 2026-01-01T09:00:07Z\n\n### note-prompt.sh\n\nIdentifier UserPromptSubmit:0:0\nEvent UserPromptSubmit\nMatcher None\nClass firing-without-effect\nMatched 1\nRan 1\nEffects denial 0, modification 0, consumed output 0\nFirst ran at 2026-01-01T09:00:00Z\nLast ran at 2026-01-01T09:00:00Z\n\n### wrap-up.sh\n\nIdentifier Stop:0:0\nEvent Stop\nMatcher None\nClass firing-without-effect\nMatched 1\nRan 1\nEffects denial 0, modification 0, consumed output 0\nFirst ran at 2026-01-01T09:01:00Z\nLast ran at 2026-01-01T09:01:00Z\n\n## Near misses\n\nNone.\n"
+    }
+   ]
+  },
+  {
+   "name": "the outputs carry no local paths",
+   "section": "behaviours",
+   "inputs": [
+    {
+     "path": "settings.json",
+     "text": "{\"hooks\": {\"PreToolUse\": [{\"matcher\": \"Bash\", \"hooks\": [{\"type\": \"command\", \"command\": \"guard-bash.sh\"}]}, {\"matcher\": \"Edit|Write\", \"hooks\": [{\"type\": \"command\", \"command\": \"lint-edit.py\"}]}, {\"matcher\": \"\", \"hooks\": [{\"type\": \"command\", \"command\": \"audit-all.sh\"}]}], \"PostToolUse\": [{\"matcher\": \"Bash\", \"hooks\": [{\"type\": \"command\", \"command\": \"log-bash.sh\"}]}], \"UserPromptSubmit\": [{\"hooks\": [{\"type\": \"command\", \"command\": \"note-prompt.sh\"}]}], \"Stop\": [{\"hooks\": [{\"type\": \"command\", \"command\": \"wrap-up.sh\"}]}]}}"
+    },
+    {
+     "path": "session.jsonl",
+     "text": "{\"type\": \"user\", \"timestamp\": \"2026-01-01T09:00:00Z\", \"sessionId\": \"synthetic-session-1\", \"message\": {\"role\": \"user\", \"content\": \"please run the tests\"}}\n{\"type\": \"assistant\", \"timestamp\": \"2026-01-01T09:00:05Z\", \"sessionId\": \"synthetic-session-1\", \"message\": {\"role\": \"assistant\", \"content\": [{\"type\": \"tool_use\", \"id\": \"call-1\", \"name\": \"Bash\", \"input\": {\"command\": \"synthetic\"}}]}}\n{\"type\": \"user\", \"timestamp\": \"2026-01-01T09:00:07Z\", \"sessionId\": \"synthetic-session-1\", \"message\": {\"role\": \"user\", \"content\": [{\"type\": \"tool_result\", \"tool_use_id\": \"call-1\", \"content\": \"denied by policy\", \"is_error\": true}]}}\n{\"type\": \"system\", \"subtype\": \"stop_hook_summary\", \"timestamp\": \"2026-01-01T09:01:00Z\", \"sessionId\": \"synthetic-session-1\", \"hookCount\": 1, \"hookInfos\": [{\"command\": \"wrap-up.sh\"}], \"hookErrors\": [], \"preventedContinuation\": false, \"hasOutput\": false}\n"
+    }
+   ],
+   "steps": [
+    {
+     "argv": [
+      "--config",
+      "{DIR}/settings.json",
+      "--session",
+      "{DIR}/session.jsonl",
+      "--output",
+      "{DIR}/report.json",
+      "--report",
+      "{DIR}/report.md"
+     ],
+     "exit": 0,
+     "stderr": "",
+     "stdout_empty": true
+    }
+   ],
+   "outputs": [
+    {
+     "path": "report.json",
+     "text": "{\n  \"config_source\": \"settings.json\",\n  \"format\": \"hookdoctor-report/1\",\n  \"hooks\": [\n    {\n      \"class\": \"firing\",\n      \"command\": \"guard-bash.sh\",\n      \"event\": \"PreToolUse\",\n      \"evidence\": {\n        \"effects\": {\n          \"consumed_output\": 0,\n          \"denial\": 1,\n          \"modification\": 0\n        },\n        \"first_ran_at\": \"2026-01-01T09:00:05Z\",\n        \"last_ran_at\": \"2026-01-01T09:00:05Z\",\n        \"matched\": 1,\n        \"ran\": 1\n      },\n      \"hook_type\": \"command\",\n      \"id\": \"PreToolUse:0:0\",\n      \"matcher\": \"Bash\"\n    },\n    {\n      \"class\": \"silent\",\n      \"command\": \"lint-edit.py\",\n      \"event\": \"PreToolUse\",\n      \"evidence\": {\n        \"effects\": {\n          \"consumed_output\": 0,\n          \"denial\": 0,\n          \"modification\": 0\n        },\n        \"first_ran_at\": null,\n        \"last_ran_at\": null,\n        \"matched\": 0,\n        \"ran\": 0\n      },\n      \"hook_type\": \"command\",\n      \"id\": \"PreToolUse:1:0\",\n      \"matcher\": \"Edit|Write\"\n    },\n    {\n      \"class\": \"firing\",\n      \"command\": \"audit-all.sh\",\n      \"event\": \"PreToolUse\",\n      \"evidence\": {\n        \"effects\": {\n          \"consumed_output\": 0,\n          \"denial\": 1,\n          \"modification\": 0\n        },\n        \"first_ran_at\": \"2026-01-01T09:00:05Z\",\n        \"last_ran_at\": \"2026-01-01T09:00:05Z\",\n        \"matched\": 1,\n        \"ran\": 1\n      },\n      \"hook_type\": \"command\",\n      \"id\": \"PreToolUse:2:0\",\n      \"matcher\": \"\"\n    },\n    {\n      \"class\": \"firing-without-effect\",\n      \"command\": \"log-bash.sh\",\n      \"event\": \"PostToolUse\",\n      \"evidence\": {\n        \"effects\": {\n          \"consumed_output\": 0,\n          \"denial\": 0,\n          \"modification\": 0\n        },\n        \"first_ran_at\": \"2026-01-01T09:00:07Z\",\n        \"last_ran_at\": \"2026-01-01T09:00:07Z\",\n        \"matched\": 1,\n        \"ran\": 1\n      },\n      \"hook_type\": \"command\",\n      \"id\": \"PostToolUse:0:0\",\n      \"matcher\": \"Bash\"\n    },\n    {\n      \"class\": \"firing-without-effect\",\n      \"command\": \"note-prompt.sh\",\n      \"event\": \"UserPromptSubmit\",\n      \"evidence\": {\n        \"effects\": {\n          \"consumed_output\": 0,\n          \"denial\": 0,\n          \"modification\": 0\n        },\n        \"first_ran_at\": \"2026-01-01T09:00:00Z\",\n        \"last_ran_at\": \"2026-01-01T09:00:00Z\",\n        \"matched\": 1,\n        \"ran\": 1\n      },\n      \"hook_type\": \"command\",\n      \"id\": \"UserPromptSubmit:0:0\",\n      \"matcher\": null\n    },\n    {\n      \"class\": \"firing-without-effect\",\n      \"command\": \"wrap-up.sh\",\n      \"event\": \"Stop\",\n      \"evidence\": {\n        \"effects\": {\n          \"consumed_output\": 0,\n          \"denial\": 0,\n          \"modification\": 0\n        },\n        \"first_ran_at\": \"2026-01-01T09:01:00Z\",\n        \"last_ran_at\": \"2026-01-01T09:01:00Z\",\n        \"matched\": 1,\n        \"ran\": 1\n      },\n      \"hook_type\": \"command\",\n      \"id\": \"Stop:0:0\",\n      \"matcher\": null\n    }\n  ],\n  \"near_misses\": [],\n  \"session_sources\": [\n    \"session.jsonl\"\n  ],\n  \"window\": {\n    \"end\": null,\n    \"start\": null\n  }\n}\n"
+    },
+    {
+     "path": "report.md",
+     "text": "# hookdoctor examination\n\nFormat hookdoctor-report/1\nConfiguration source settings.json\nSession sources session.jsonl\nWindow start None end None\n\n## Hooks\n\n### guard-bash.sh\n\nIdentifier PreToolUse:0:0\nEvent PreToolUse\nMatcher Bash\nClass firing\nMatched 1\nRan 1\nEffects denial 1, modification 0, consumed output 0\nFirst ran at 2026-01-01T09:00:05Z\nLast ran at 2026-01-01T09:00:05Z\n\n### lint-edit.py\n\nIdentifier PreToolUse:1:0\nEvent PreToolUse\nMatcher Edit|Write\nClass silent\nMatched 0\nRan 0\nEffects denial 0, modification 0, consumed output 0\nFirst ran at None\nLast ran at None\n\n### audit-all.sh\n\nIdentifier PreToolUse:2:0\nEvent PreToolUse\nMatcher \nClass firing\nMatched 1\nRan 1\nEffects denial 1, modification 0, consumed output 0\nFirst ran at 2026-01-01T09:00:05Z\nLast ran at 2026-01-01T09:00:05Z\n\n### log-bash.sh\n\nIdentifier PostToolUse:0:0\nEvent PostToolUse\nMatcher Bash\nClass firing-without-effect\nMatched 1\nRan 1\nEffects denial 0, modification 0, consumed output 0\nFirst ran at 2026-01-01T09:00:07Z\nLast ran at 2026-01-01T09:00:07Z\n\n### note-prompt.sh\n\nIdentifier UserPromptSubmit:0:0\nEvent UserPromptSubmit\nMatcher None\nClass firing-without-effect\nMatched 1\nRan 1\nEffects denial 0, modification 0, consumed output 0\nFirst ran at 2026-01-01T09:00:00Z\nLast ran at 2026-01-01T09:00:00Z\n\n### wrap-up.sh\n\nIdentifier Stop:0:0\nEvent Stop\nMatcher None\nClass firing-without-effect\nMatched 1\nRan 1\nEffects denial 0, modification 0, consumed output 0\nFirst ran at 2026-01-01T09:01:00Z\nLast ran at 2026-01-01T09:01:00Z\n\n## Near misses\n\nNone.\n"
+    }
+   ]
+  },
+  {
+   "name": "no arguments",
+   "section": "arguments",
+   "inputs": [],
+   "steps": [
+    {
+     "argv": [],
+     "exit": 2,
+     "stderr": null,
+     "stdout_empty": true
+    }
+   ],
+   "outputs": []
+  },
+  {
+   "name": "no session standing",
+   "section": "arguments",
+   "inputs": [],
+   "steps": [
+    {
+     "argv": [
+      "--config",
+      "settings.json",
+      "--output",
+      "report.json",
+      "--report",
+      "report.md"
+     ],
+     "exit": 2,
+     "stderr": null,
+     "stdout_empty": true
+    }
+   ],
+   "outputs": []
+  },
+  {
+   "name": "a missing required flag",
+   "section": "arguments",
+   "inputs": [
+    {
+     "path": "settings.json",
+     "text": "{\"hooks\": {\"PreToolUse\": [{\"matcher\": \"Bash\", \"hooks\": [{\"type\": \"command\", \"command\": \"guard-bash.sh\"}]}, {\"matcher\": \"Edit|Write\", \"hooks\": [{\"type\": \"command\", \"command\": \"lint-edit.py\"}]}, {\"matcher\": \"\", \"hooks\": [{\"type\": \"command\", \"command\": \"audit-all.sh\"}]}], \"PostToolUse\": [{\"matcher\": \"Bash\", \"hooks\": [{\"type\": \"command\", \"command\": \"log-bash.sh\"}]}], \"UserPromptSubmit\": [{\"hooks\": [{\"type\": \"command\", \"command\": \"note-prompt.sh\"}]}], \"Stop\": [{\"hooks\": [{\"type\": \"command\", \"command\": \"wrap-up.sh\"}]}]}}"
+    },
+    {
+     "path": "session.jsonl",
+     "text": "{\"type\": \"user\", \"timestamp\": \"2026-01-01T09:00:00Z\", \"sessionId\": \"synthetic-session-1\", \"message\": {\"role\": \"user\", \"content\": \"please run the tests\"}}\n{\"type\": \"assistant\", \"timestamp\": \"2026-01-01T09:00:05Z\", \"sessionId\": \"synthetic-session-1\", \"message\": {\"role\": \"assistant\", \"content\": [{\"type\": \"tool_use\", \"id\": \"call-1\", \"name\": \"Bash\", \"input\": {\"command\": \"synthetic\"}}]}}\n{\"type\": \"user\", \"timestamp\": \"2026-01-01T09:00:07Z\", \"sessionId\": \"synthetic-session-1\", \"message\": {\"role\": \"user\", \"content\": [{\"type\": \"tool_result\", \"tool_use_id\": \"call-1\", \"content\": \"denied by policy\", \"is_error\": true}]}}\n{\"type\": \"system\", \"subtype\": \"stop_hook_summary\", \"timestamp\": \"2026-01-01T09:01:00Z\", \"sessionId\": \"synthetic-session-1\", \"hookCount\": 1, \"hookInfos\": [{\"command\": \"wrap-up.sh\"}], \"hookErrors\": [], \"preventedContinuation\": false, \"hasOutput\": false}\n"
+    }
+   ],
+   "steps": [
+    {
+     "argv": [
+      "--config",
+      "{DIR}/settings.json",
+      "--session",
+      "{DIR}/session.jsonl",
+      "--output",
+      "{DIR}/report.json"
+     ],
+     "exit": 2,
+     "stderr": null,
+     "stdout_empty": true
+    }
+   ],
+   "outputs": []
+  },
+  {
+   "name": "an unknown flag",
+   "section": "arguments",
+   "inputs": [
+    {
+     "path": "settings.json",
+     "text": "{\"hooks\": {\"PreToolUse\": [{\"matcher\": \"Bash\", \"hooks\": [{\"type\": \"command\", \"command\": \"guard-bash.sh\"}]}, {\"matcher\": \"Edit|Write\", \"hooks\": [{\"type\": \"command\", \"command\": \"lint-edit.py\"}]}, {\"matcher\": \"\", \"hooks\": [{\"type\": \"command\", \"command\": \"audit-all.sh\"}]}], \"PostToolUse\": [{\"matcher\": \"Bash\", \"hooks\": [{\"type\": \"command\", \"command\": \"log-bash.sh\"}]}], \"UserPromptSubmit\": [{\"hooks\": [{\"type\": \"command\", \"command\": \"note-prompt.sh\"}]}], \"Stop\": [{\"hooks\": [{\"type\": \"command\", \"command\": \"wrap-up.sh\"}]}]}}"
+    },
+    {
+     "path": "session.jsonl",
+     "text": "{\"type\": \"user\", \"timestamp\": \"2026-01-01T09:00:00Z\", \"sessionId\": \"synthetic-session-1\", \"message\": {\"role\": \"user\", \"content\": \"please run the tests\"}}\n{\"type\": \"assistant\", \"timestamp\": \"2026-01-01T09:00:05Z\", \"sessionId\": \"synthetic-session-1\", \"message\": {\"role\": \"assistant\", \"content\": [{\"type\": \"tool_use\", \"id\": \"call-1\", \"name\": \"Bash\", \"input\": {\"command\": \"synthetic\"}}]}}\n{\"type\": \"user\", \"timestamp\": \"2026-01-01T09:00:07Z\", \"sessionId\": \"synthetic-session-1\", \"message\": {\"role\": \"user\", \"content\": [{\"type\": \"tool_result\", \"tool_use_id\": \"call-1\", \"content\": \"denied by policy\", \"is_error\": true}]}}\n{\"type\": \"system\", \"subtype\": \"stop_hook_summary\", \"timestamp\": \"2026-01-01T09:01:00Z\", \"sessionId\": \"synthetic-session-1\", \"hookCount\": 1, \"hookInfos\": [{\"command\": \"wrap-up.sh\"}], \"hookErrors\": [], \"preventedContinuation\": false, \"hasOutput\": false}\n"
+    }
+   ],
+   "steps": [
+    {
+     "argv": [
+      "--config",
+      "{DIR}/settings.json",
+      "--session",
+      "{DIR}/session.jsonl",
+      "--output",
+      "{DIR}/report.json",
+      "--report",
+      "{DIR}/report.md",
+      "--bogus"
+     ],
+     "exit": 2,
+     "stderr": null,
+     "stdout_empty": true
+    }
+   ],
+   "outputs": []
+  },
+  {
+   "name": "an unknown flag then the help flag",
+   "section": "arguments",
+   "inputs": [],
+   "steps": [
+    {
+     "argv": [
+      "--bogus",
+      "-h"
+     ],
+     "exit": 0,
+     "stderr": "",
+     "stdout_empty": false
+    }
+   ],
+   "outputs": []
+  },
+  {
+   "name": "an extra positional",
+   "section": "arguments",
+   "inputs": [
+    {
+     "path": "settings.json",
+     "text": "{\"hooks\": {\"PreToolUse\": [{\"matcher\": \"Bash\", \"hooks\": [{\"type\": \"command\", \"command\": \"guard-bash.sh\"}]}, {\"matcher\": \"Edit|Write\", \"hooks\": [{\"type\": \"command\", \"command\": \"lint-edit.py\"}]}, {\"matcher\": \"\", \"hooks\": [{\"type\": \"command\", \"command\": \"audit-all.sh\"}]}], \"PostToolUse\": [{\"matcher\": \"Bash\", \"hooks\": [{\"type\": \"command\", \"command\": \"log-bash.sh\"}]}], \"UserPromptSubmit\": [{\"hooks\": [{\"type\": \"command\", \"command\": \"note-prompt.sh\"}]}], \"Stop\": [{\"hooks\": [{\"type\": \"command\", \"command\": \"wrap-up.sh\"}]}]}}"
+    },
+    {
+     "path": "session.jsonl",
+     "text": "{\"type\": \"user\", \"timestamp\": \"2026-01-01T09:00:00Z\", \"sessionId\": \"synthetic-session-1\", \"message\": {\"role\": \"user\", \"content\": \"please run the tests\"}}\n{\"type\": \"assistant\", \"timestamp\": \"2026-01-01T09:00:05Z\", \"sessionId\": \"synthetic-session-1\", \"message\": {\"role\": \"assistant\", \"content\": [{\"type\": \"tool_use\", \"id\": \"call-1\", \"name\": \"Bash\", \"input\": {\"command\": \"synthetic\"}}]}}\n{\"type\": \"user\", \"timestamp\": \"2026-01-01T09:00:07Z\", \"sessionId\": \"synthetic-session-1\", \"message\": {\"role\": \"user\", \"content\": [{\"type\": \"tool_result\", \"tool_use_id\": \"call-1\", \"content\": \"denied by policy\", \"is_error\": true}]}}\n{\"type\": \"system\", \"subtype\": \"stop_hook_summary\", \"timestamp\": \"2026-01-01T09:01:00Z\", \"sessionId\": \"synthetic-session-1\", \"hookCount\": 1, \"hookInfos\": [{\"command\": \"wrap-up.sh\"}], \"hookErrors\": [], \"preventedContinuation\": false, \"hasOutput\": false}\n"
+    }
+   ],
+   "steps": [
+    {
+     "argv": [
+      "--config",
+      "{DIR}/settings.json",
+      "--session",
+      "{DIR}/session.jsonl",
+      "--output",
+      "{DIR}/report.json",
+      "--report",
+      "{DIR}/report.md",
+      "extra"
+     ],
+     "exit": 2,
+     "stderr": null,
+     "stdout_empty": true
+    }
+   ],
+   "outputs": []
+  },
+  {
+   "name": "a positional then the help flag",
+   "section": "arguments",
+   "inputs": [],
+   "steps": [
+    {
+     "argv": [
+      "extra",
+      "-h"
+     ],
+     "exit": 0,
+     "stderr": "",
+     "stdout_empty": false
+    }
+   ],
+   "outputs": []
+  },
+  {
+   "name": "a flag with no value",
+   "section": "arguments",
+   "inputs": [
+    {
+     "path": "settings.json",
+     "text": "{\"hooks\": {\"PreToolUse\": [{\"matcher\": \"Bash\", \"hooks\": [{\"type\": \"command\", \"command\": \"guard-bash.sh\"}]}, {\"matcher\": \"Edit|Write\", \"hooks\": [{\"type\": \"command\", \"command\": \"lint-edit.py\"}]}, {\"matcher\": \"\", \"hooks\": [{\"type\": \"command\", \"command\": \"audit-all.sh\"}]}], \"PostToolUse\": [{\"matcher\": \"Bash\", \"hooks\": [{\"type\": \"command\", \"command\": \"log-bash.sh\"}]}], \"UserPromptSubmit\": [{\"hooks\": [{\"type\": \"command\", \"command\": \"note-prompt.sh\"}]}], \"Stop\": [{\"hooks\": [{\"type\": \"command\", \"command\": \"wrap-up.sh\"}]}]}}"
+    },
+    {
+     "path": "session.jsonl",
+     "text": "{\"type\": \"user\", \"timestamp\": \"2026-01-01T09:00:00Z\", \"sessionId\": \"synthetic-session-1\", \"message\": {\"role\": \"user\", \"content\": \"please run the tests\"}}\n{\"type\": \"assistant\", \"timestamp\": \"2026-01-01T09:00:05Z\", \"sessionId\": \"synthetic-session-1\", \"message\": {\"role\": \"assistant\", \"content\": [{\"type\": \"tool_use\", \"id\": \"call-1\", \"name\": \"Bash\", \"input\": {\"command\": \"synthetic\"}}]}}\n{\"type\": \"user\", \"timestamp\": \"2026-01-01T09:00:07Z\", \"sessionId\": \"synthetic-session-1\", \"message\": {\"role\": \"user\", \"content\": [{\"type\": \"tool_result\", \"tool_use_id\": \"call-1\", \"content\": \"denied by policy\", \"is_error\": true}]}}\n{\"type\": \"system\", \"subtype\": \"stop_hook_summary\", \"timestamp\": \"2026-01-01T09:01:00Z\", \"sessionId\": \"synthetic-session-1\", \"hookCount\": 1, \"hookInfos\": [{\"command\": \"wrap-up.sh\"}], \"hookErrors\": [], \"preventedContinuation\": false, \"hasOutput\": false}\n"
+    }
+   ],
+   "steps": [
+    {
+     "argv": [
+      "--config",
+      "{DIR}/settings.json",
+      "--session",
+      "{DIR}/session.jsonl",
+      "--output",
+      "{DIR}/report.json",
+      "--report",
+      "{DIR}/report.md",
+      "--window-start"
+     ],
+     "exit": 2,
+     "stderr": null,
+     "stdout_empty": true
+    }
+   ],
+   "outputs": []
+  },
+  {
+   "name": "a flag whose value looks like an option",
+   "section": "arguments",
+   "inputs": [],
+   "steps": [
+    {
+     "argv": [
+      "--config",
+      "--session",
+      "session.jsonl",
+      "--output",
+      "report.json",
+      "--report",
+      "report.md"
+     ],
+     "exit": 2,
+     "stderr": null,
+     "stdout_empty": true
+    }
+   ],
+   "outputs": []
+  },
+  {
+   "name": "the ambiguous configuration prefix",
+   "section": "arguments",
+   "inputs": [],
+   "steps": [
+    {
+     "argv": [
+      "--con",
+      "x",
+      "--session",
+      "session.jsonl",
+      "--output",
+      "report.json",
+      "--report",
+      "report.md"
+     ],
+     "exit": 2,
+     "stderr": null,
+     "stdout_empty": true
+    }
+   ],
+   "outputs": []
+  },
+  {
+   "name": "the ambiguous session prefix",
+   "section": "arguments",
+   "inputs": [],
+   "steps": [
+    {
+     "argv": [
+      "--config",
+      "settings.json",
+      "--sess",
+      "x",
+      "--output",
+      "report.json",
+      "--report",
+      "report.md"
+     ],
+     "exit": 2,
+     "stderr": null,
+     "stdout_empty": true
+    }
+   ],
+   "outputs": []
+  },
+  {
+   "name": "an ambiguous prefix in an equals form",
+   "section": "arguments",
+   "inputs": [],
+   "steps": [
+    {
+     "argv": [
+      "--con=x",
+      "--session",
+      "session.jsonl",
+      "--output",
+      "report.json",
+      "--report",
+      "report.md"
+     ],
+     "exit": 2,
+     "stderr": null,
+     "stdout_empty": true
+    }
+   ],
+   "outputs": []
+  },
+  {
+   "name": "a working unique prefix",
+   "section": "arguments",
+   "inputs": [
+    {
+     "path": "settings.json",
+     "text": "{\"hooks\": {\"PreToolUse\": [{\"matcher\": \"Bash\", \"hooks\": [{\"type\": \"command\", \"command\": \"guard-bash.sh\"}]}, {\"matcher\": \"Edit|Write\", \"hooks\": [{\"type\": \"command\", \"command\": \"lint-edit.py\"}]}, {\"matcher\": \"\", \"hooks\": [{\"type\": \"command\", \"command\": \"audit-all.sh\"}]}], \"PostToolUse\": [{\"matcher\": \"Bash\", \"hooks\": [{\"type\": \"command\", \"command\": \"log-bash.sh\"}]}], \"UserPromptSubmit\": [{\"hooks\": [{\"type\": \"command\", \"command\": \"note-prompt.sh\"}]}], \"Stop\": [{\"hooks\": [{\"type\": \"command\", \"command\": \"wrap-up.sh\"}]}]}}"
+    },
+    {
+     "path": "session.jsonl",
+     "text": "{\"type\": \"user\", \"timestamp\": \"2026-01-01T09:00:00Z\", \"sessionId\": \"synthetic-session-1\", \"message\": {\"role\": \"user\", \"content\": \"please run the tests\"}}\n{\"type\": \"assistant\", \"timestamp\": \"2026-01-01T09:00:05Z\", \"sessionId\": \"synthetic-session-1\", \"message\": {\"role\": \"assistant\", \"content\": [{\"type\": \"tool_use\", \"id\": \"call-1\", \"name\": \"Bash\", \"input\": {\"command\": \"synthetic\"}}]}}\n{\"type\": \"user\", \"timestamp\": \"2026-01-01T09:00:07Z\", \"sessionId\": \"synthetic-session-1\", \"message\": {\"role\": \"user\", \"content\": [{\"type\": \"tool_result\", \"tool_use_id\": \"call-1\", \"content\": \"denied by policy\", \"is_error\": true}]}}\n{\"type\": \"system\", \"subtype\": \"stop_hook_summary\", \"timestamp\": \"2026-01-01T09:01:00Z\", \"sessionId\": \"synthetic-session-1\", \"hookCount\": 1, \"hookInfos\": [{\"command\": \"wrap-up.sh\"}], \"hookErrors\": [], \"preventedContinuation\": false, \"hasOutput\": false}\n"
+    }
+   ],
+   "steps": [
+    {
+     "argv": [
+      "--config",
+      "{DIR}/settings.json",
+      "--session",
+      "{DIR}/session.jsonl",
+      "--o",
+      "{DIR}/report.json",
+      "--r",
+      "{DIR}/report.md"
+     ],
+     "exit": 0,
+     "stderr": "",
+     "stdout_empty": true
+    }
+   ],
+   "outputs": [
+    {
+     "path": "report.json",
+     "text": "{\n  \"config_source\": \"settings.json\",\n  \"format\": \"hookdoctor-report/1\",\n  \"hooks\": [\n    {\n      \"class\": \"firing\",\n      \"command\": \"guard-bash.sh\",\n      \"event\": \"PreToolUse\",\n      \"evidence\": {\n        \"effects\": {\n          \"consumed_output\": 0,\n          \"denial\": 1,\n          \"modification\": 0\n        },\n        \"first_ran_at\": \"2026-01-01T09:00:05Z\",\n        \"last_ran_at\": \"2026-01-01T09:00:05Z\",\n        \"matched\": 1,\n        \"ran\": 1\n      },\n      \"hook_type\": \"command\",\n      \"id\": \"PreToolUse:0:0\",\n      \"matcher\": \"Bash\"\n    },\n    {\n      \"class\": \"silent\",\n      \"command\": \"lint-edit.py\",\n      \"event\": \"PreToolUse\",\n      \"evidence\": {\n        \"effects\": {\n          \"consumed_output\": 0,\n          \"denial\": 0,\n          \"modification\": 0\n        },\n        \"first_ran_at\": null,\n        \"last_ran_at\": null,\n        \"matched\": 0,\n        \"ran\": 0\n      },\n      \"hook_type\": \"command\",\n      \"id\": \"PreToolUse:1:0\",\n      \"matcher\": \"Edit|Write\"\n    },\n    {\n      \"class\": \"firing\",\n      \"command\": \"audit-all.sh\",\n      \"event\": \"PreToolUse\",\n      \"evidence\": {\n        \"effects\": {\n          \"consumed_output\": 0,\n          \"denial\": 1,\n          \"modification\": 0\n        },\n        \"first_ran_at\": \"2026-01-01T09:00:05Z\",\n        \"last_ran_at\": \"2026-01-01T09:00:05Z\",\n        \"matched\": 1,\n        \"ran\": 1\n      },\n      \"hook_type\": \"command\",\n      \"id\": \"PreToolUse:2:0\",\n      \"matcher\": \"\"\n    },\n    {\n      \"class\": \"firing-without-effect\",\n      \"command\": \"log-bash.sh\",\n      \"event\": \"PostToolUse\",\n      \"evidence\": {\n        \"effects\": {\n          \"consumed_output\": 0,\n          \"denial\": 0,\n          \"modification\": 0\n        },\n        \"first_ran_at\": \"2026-01-01T09:00:07Z\",\n        \"last_ran_at\": \"2026-01-01T09:00:07Z\",\n        \"matched\": 1,\n        \"ran\": 1\n      },\n      \"hook_type\": \"command\",\n      \"id\": \"PostToolUse:0:0\",\n      \"matcher\": \"Bash\"\n    },\n    {\n      \"class\": \"firing-without-effect\",\n      \"command\": \"note-prompt.sh\",\n      \"event\": \"UserPromptSubmit\",\n      \"evidence\": {\n        \"effects\": {\n          \"consumed_output\": 0,\n          \"denial\": 0,\n          \"modification\": 0\n        },\n        \"first_ran_at\": \"2026-01-01T09:00:00Z\",\n        \"last_ran_at\": \"2026-01-01T09:00:00Z\",\n        \"matched\": 1,\n        \"ran\": 1\n      },\n      \"hook_type\": \"command\",\n      \"id\": \"UserPromptSubmit:0:0\",\n      \"matcher\": null\n    },\n    {\n      \"class\": \"firing-without-effect\",\n      \"command\": \"wrap-up.sh\",\n      \"event\": \"Stop\",\n      \"evidence\": {\n        \"effects\": {\n          \"consumed_output\": 0,\n          \"denial\": 0,\n          \"modification\": 0\n        },\n        \"first_ran_at\": \"2026-01-01T09:01:00Z\",\n        \"last_ran_at\": \"2026-01-01T09:01:00Z\",\n        \"matched\": 1,\n        \"ran\": 1\n      },\n      \"hook_type\": \"command\",\n      \"id\": \"Stop:0:0\",\n      \"matcher\": null\n    }\n  ],\n  \"near_misses\": [],\n  \"session_sources\": [\n    \"session.jsonl\"\n  ],\n  \"window\": {\n    \"end\": null,\n    \"start\": null\n  }\n}\n"
+    },
+    {
+     "path": "report.md",
+     "text": "# hookdoctor examination\n\nFormat hookdoctor-report/1\nConfiguration source settings.json\nSession sources session.jsonl\nWindow start None end None\n\n## Hooks\n\n### guard-bash.sh\n\nIdentifier PreToolUse:0:0\nEvent PreToolUse\nMatcher Bash\nClass firing\nMatched 1\nRan 1\nEffects denial 1, modification 0, consumed output 0\nFirst ran at 2026-01-01T09:00:05Z\nLast ran at 2026-01-01T09:00:05Z\n\n### lint-edit.py\n\nIdentifier PreToolUse:1:0\nEvent PreToolUse\nMatcher Edit|Write\nClass silent\nMatched 0\nRan 0\nEffects denial 0, modification 0, consumed output 0\nFirst ran at None\nLast ran at None\n\n### audit-all.sh\n\nIdentifier PreToolUse:2:0\nEvent PreToolUse\nMatcher \nClass firing\nMatched 1\nRan 1\nEffects denial 1, modification 0, consumed output 0\nFirst ran at 2026-01-01T09:00:05Z\nLast ran at 2026-01-01T09:00:05Z\n\n### log-bash.sh\n\nIdentifier PostToolUse:0:0\nEvent PostToolUse\nMatcher Bash\nClass firing-without-effect\nMatched 1\nRan 1\nEffects denial 0, modification 0, consumed output 0\nFirst ran at 2026-01-01T09:00:07Z\nLast ran at 2026-01-01T09:00:07Z\n\n### note-prompt.sh\n\nIdentifier UserPromptSubmit:0:0\nEvent UserPromptSubmit\nMatcher None\nClass firing-without-effect\nMatched 1\nRan 1\nEffects denial 0, modification 0, consumed output 0\nFirst ran at 2026-01-01T09:00:00Z\nLast ran at 2026-01-01T09:00:00Z\n\n### wrap-up.sh\n\nIdentifier Stop:0:0\nEvent Stop\nMatcher None\nClass firing-without-effect\nMatched 1\nRan 1\nEffects denial 0, modification 0, consumed output 0\nFirst ran at 2026-01-01T09:01:00Z\nLast ran at 2026-01-01T09:01:00Z\n\n## Near misses\n\nNone.\n"
+    }
+   ]
+  },
+  {
+   "name": "the label prefixes read",
+   "section": "arguments",
+   "inputs": [
+    {
+     "path": "settings.json",
+     "text": "{\"hooks\": {\"PreToolUse\": [{\"matcher\": \"Bash\", \"hooks\": [{\"type\": \"command\", \"command\": \"guard-bash.sh\"}]}, {\"matcher\": \"Edit|Write\", \"hooks\": [{\"type\": \"command\", \"command\": \"lint-edit.py\"}]}, {\"matcher\": \"\", \"hooks\": [{\"type\": \"command\", \"command\": \"audit-all.sh\"}]}], \"PostToolUse\": [{\"matcher\": \"Bash\", \"hooks\": [{\"type\": \"command\", \"command\": \"log-bash.sh\"}]}], \"UserPromptSubmit\": [{\"hooks\": [{\"type\": \"command\", \"command\": \"note-prompt.sh\"}]}], \"Stop\": [{\"hooks\": [{\"type\": \"command\", \"command\": \"wrap-up.sh\"}]}]}}"
+    },
+    {
+     "path": "session.jsonl",
+     "text": "{\"type\": \"user\", \"timestamp\": \"2026-01-01T09:00:00Z\", \"sessionId\": \"synthetic-session-1\", \"message\": {\"role\": \"user\", \"content\": \"please run the tests\"}}\n{\"type\": \"assistant\", \"timestamp\": \"2026-01-01T09:00:05Z\", \"sessionId\": \"synthetic-session-1\", \"message\": {\"role\": \"assistant\", \"content\": [{\"type\": \"tool_use\", \"id\": \"call-1\", \"name\": \"Bash\", \"input\": {\"command\": \"synthetic\"}}]}}\n{\"type\": \"user\", \"timestamp\": \"2026-01-01T09:00:07Z\", \"sessionId\": \"synthetic-session-1\", \"message\": {\"role\": \"user\", \"content\": [{\"type\": \"tool_result\", \"tool_use_id\": \"call-1\", \"content\": \"denied by policy\", \"is_error\": true}]}}\n{\"type\": \"system\", \"subtype\": \"stop_hook_summary\", \"timestamp\": \"2026-01-01T09:01:00Z\", \"sessionId\": \"synthetic-session-1\", \"hookCount\": 1, \"hookInfos\": [{\"command\": \"wrap-up.sh\"}], \"hookErrors\": [], \"preventedContinuation\": false, \"hasOutput\": false}\n"
+    }
+   ],
+   "steps": [
+    {
+     "argv": [
+      "--config",
+      "{DIR}/settings.json",
+      "--session",
+      "{DIR}/session.jsonl",
+      "--output",
+      "{DIR}/report.json",
+      "--report",
+      "{DIR}/report.md",
+      "--config-l",
+      "the-config",
+      "--session-l",
+      "the-session"
+     ],
+     "exit": 0,
+     "stderr": "",
+     "stdout_empty": true
+    }
+   ],
+   "outputs": [
+    {
+     "path": "report.json",
+     "text": "{\n  \"config_source\": \"the-config\",\n  \"format\": \"hookdoctor-report/1\",\n  \"hooks\": [\n    {\n      \"class\": \"firing\",\n      \"command\": \"guard-bash.sh\",\n      \"event\": \"PreToolUse\",\n      \"evidence\": {\n        \"effects\": {\n          \"consumed_output\": 0,\n          \"denial\": 1,\n          \"modification\": 0\n        },\n        \"first_ran_at\": \"2026-01-01T09:00:05Z\",\n        \"last_ran_at\": \"2026-01-01T09:00:05Z\",\n        \"matched\": 1,\n        \"ran\": 1\n      },\n      \"hook_type\": \"command\",\n      \"id\": \"PreToolUse:0:0\",\n      \"matcher\": \"Bash\"\n    },\n    {\n      \"class\": \"silent\",\n      \"command\": \"lint-edit.py\",\n      \"event\": \"PreToolUse\",\n      \"evidence\": {\n        \"effects\": {\n          \"consumed_output\": 0,\n          \"denial\": 0,\n          \"modification\": 0\n        },\n        \"first_ran_at\": null,\n        \"last_ran_at\": null,\n        \"matched\": 0,\n        \"ran\": 0\n      },\n      \"hook_type\": \"command\",\n      \"id\": \"PreToolUse:1:0\",\n      \"matcher\": \"Edit|Write\"\n    },\n    {\n      \"class\": \"firing\",\n      \"command\": \"audit-all.sh\",\n      \"event\": \"PreToolUse\",\n      \"evidence\": {\n        \"effects\": {\n          \"consumed_output\": 0,\n          \"denial\": 1,\n          \"modification\": 0\n        },\n        \"first_ran_at\": \"2026-01-01T09:00:05Z\",\n        \"last_ran_at\": \"2026-01-01T09:00:05Z\",\n        \"matched\": 1,\n        \"ran\": 1\n      },\n      \"hook_type\": \"command\",\n      \"id\": \"PreToolUse:2:0\",\n      \"matcher\": \"\"\n    },\n    {\n      \"class\": \"firing-without-effect\",\n      \"command\": \"log-bash.sh\",\n      \"event\": \"PostToolUse\",\n      \"evidence\": {\n        \"effects\": {\n          \"consumed_output\": 0,\n          \"denial\": 0,\n          \"modification\": 0\n        },\n        \"first_ran_at\": \"2026-01-01T09:00:07Z\",\n        \"last_ran_at\": \"2026-01-01T09:00:07Z\",\n        \"matched\": 1,\n        \"ran\": 1\n      },\n      \"hook_type\": \"command\",\n      \"id\": \"PostToolUse:0:0\",\n      \"matcher\": \"Bash\"\n    },\n    {\n      \"class\": \"firing-without-effect\",\n      \"command\": \"note-prompt.sh\",\n      \"event\": \"UserPromptSubmit\",\n      \"evidence\": {\n        \"effects\": {\n          \"consumed_output\": 0,\n          \"denial\": 0,\n          \"modification\": 0\n        },\n        \"first_ran_at\": \"2026-01-01T09:00:00Z\",\n        \"last_ran_at\": \"2026-01-01T09:00:00Z\",\n        \"matched\": 1,\n        \"ran\": 1\n      },\n      \"hook_type\": \"command\",\n      \"id\": \"UserPromptSubmit:0:0\",\n      \"matcher\": null\n    },\n    {\n      \"class\": \"firing-without-effect\",\n      \"command\": \"wrap-up.sh\",\n      \"event\": \"Stop\",\n      \"evidence\": {\n        \"effects\": {\n          \"consumed_output\": 0,\n          \"denial\": 0,\n          \"modification\": 0\n        },\n        \"first_ran_at\": \"2026-01-01T09:01:00Z\",\n        \"last_ran_at\": \"2026-01-01T09:01:00Z\",\n        \"matched\": 1,\n        \"ran\": 1\n      },\n      \"hook_type\": \"command\",\n      \"id\": \"Stop:0:0\",\n      \"matcher\": null\n    }\n  ],\n  \"near_misses\": [],\n  \"session_sources\": [\n    \"the-session\"\n  ],\n  \"window\": {\n    \"end\": null,\n    \"start\": null\n  }\n}\n"
+    },
+    {
+     "path": "report.md",
+     "text": "# hookdoctor examination\n\nFormat hookdoctor-report/1\nConfiguration source the-config\nSession sources the-session\nWindow start None end None\n\n## Hooks\n\n### guard-bash.sh\n\nIdentifier PreToolUse:0:0\nEvent PreToolUse\nMatcher Bash\nClass firing\nMatched 1\nRan 1\nEffects denial 1, modification 0, consumed output 0\nFirst ran at 2026-01-01T09:00:05Z\nLast ran at 2026-01-01T09:00:05Z\n\n### lint-edit.py\n\nIdentifier PreToolUse:1:0\nEvent PreToolUse\nMatcher Edit|Write\nClass silent\nMatched 0\nRan 0\nEffects denial 0, modification 0, consumed output 0\nFirst ran at None\nLast ran at None\n\n### audit-all.sh\n\nIdentifier PreToolUse:2:0\nEvent PreToolUse\nMatcher \nClass firing\nMatched 1\nRan 1\nEffects denial 1, modification 0, consumed output 0\nFirst ran at 2026-01-01T09:00:05Z\nLast ran at 2026-01-01T09:00:05Z\n\n### log-bash.sh\n\nIdentifier PostToolUse:0:0\nEvent PostToolUse\nMatcher Bash\nClass firing-without-effect\nMatched 1\nRan 1\nEffects denial 0, modification 0, consumed output 0\nFirst ran at 2026-01-01T09:00:07Z\nLast ran at 2026-01-01T09:00:07Z\n\n### note-prompt.sh\n\nIdentifier UserPromptSubmit:0:0\nEvent UserPromptSubmit\nMatcher None\nClass firing-without-effect\nMatched 1\nRan 1\nEffects denial 0, modification 0, consumed output 0\nFirst ran at 2026-01-01T09:00:00Z\nLast ran at 2026-01-01T09:00:00Z\n\n### wrap-up.sh\n\nIdentifier Stop:0:0\nEvent Stop\nMatcher None\nClass firing-without-effect\nMatched 1\nRan 1\nEffects denial 0, modification 0, consumed output 0\nFirst ran at 2026-01-01T09:01:00Z\nLast ran at 2026-01-01T09:01:00Z\n\n## Near misses\n\nNone.\n"
+    }
+   ]
+  },
+  {
+   "name": "the equals form",
+   "section": "arguments",
+   "inputs": [
+    {
+     "path": "settings.json",
+     "text": "{\"hooks\": {\"PreToolUse\": [{\"matcher\": \"Bash\", \"hooks\": [{\"type\": \"command\", \"command\": \"guard-bash.sh\"}]}, {\"matcher\": \"Edit|Write\", \"hooks\": [{\"type\": \"command\", \"command\": \"lint-edit.py\"}]}, {\"matcher\": \"\", \"hooks\": [{\"type\": \"command\", \"command\": \"audit-all.sh\"}]}], \"PostToolUse\": [{\"matcher\": \"Bash\", \"hooks\": [{\"type\": \"command\", \"command\": \"log-bash.sh\"}]}], \"UserPromptSubmit\": [{\"hooks\": [{\"type\": \"command\", \"command\": \"note-prompt.sh\"}]}], \"Stop\": [{\"hooks\": [{\"type\": \"command\", \"command\": \"wrap-up.sh\"}]}]}}"
+    },
+    {
+     "path": "session.jsonl",
+     "text": "{\"type\": \"user\", \"timestamp\": \"2026-01-01T09:00:00Z\", \"sessionId\": \"synthetic-session-1\", \"message\": {\"role\": \"user\", \"content\": \"please run the tests\"}}\n{\"type\": \"assistant\", \"timestamp\": \"2026-01-01T09:00:05Z\", \"sessionId\": \"synthetic-session-1\", \"message\": {\"role\": \"assistant\", \"content\": [{\"type\": \"tool_use\", \"id\": \"call-1\", \"name\": \"Bash\", \"input\": {\"command\": \"synthetic\"}}]}}\n{\"type\": \"user\", \"timestamp\": \"2026-01-01T09:00:07Z\", \"sessionId\": \"synthetic-session-1\", \"message\": {\"role\": \"user\", \"content\": [{\"type\": \"tool_result\", \"tool_use_id\": \"call-1\", \"content\": \"denied by policy\", \"is_error\": true}]}}\n{\"type\": \"system\", \"subtype\": \"stop_hook_summary\", \"timestamp\": \"2026-01-01T09:01:00Z\", \"sessionId\": \"synthetic-session-1\", \"hookCount\": 1, \"hookInfos\": [{\"command\": \"wrap-up.sh\"}], \"hookErrors\": [], \"preventedContinuation\": false, \"hasOutput\": false}\n"
+    }
+   ],
+   "steps": [
+    {
+     "argv": [
+      "--config={DIR}/settings.json",
+      "--session={DIR}/session.jsonl",
+      "--output={DIR}/report.json",
+      "--report={DIR}/report.md"
+     ],
+     "exit": 0,
+     "stderr": "",
+     "stdout_empty": true
+    }
+   ],
+   "outputs": [
+    {
+     "path": "report.json",
+     "text": "{\n  \"config_source\": \"settings.json\",\n  \"format\": \"hookdoctor-report/1\",\n  \"hooks\": [\n    {\n      \"class\": \"firing\",\n      \"command\": \"guard-bash.sh\",\n      \"event\": \"PreToolUse\",\n      \"evidence\": {\n        \"effects\": {\n          \"consumed_output\": 0,\n          \"denial\": 1,\n          \"modification\": 0\n        },\n        \"first_ran_at\": \"2026-01-01T09:00:05Z\",\n        \"last_ran_at\": \"2026-01-01T09:00:05Z\",\n        \"matched\": 1,\n        \"ran\": 1\n      },\n      \"hook_type\": \"command\",\n      \"id\": \"PreToolUse:0:0\",\n      \"matcher\": \"Bash\"\n    },\n    {\n      \"class\": \"silent\",\n      \"command\": \"lint-edit.py\",\n      \"event\": \"PreToolUse\",\n      \"evidence\": {\n        \"effects\": {\n          \"consumed_output\": 0,\n          \"denial\": 0,\n          \"modification\": 0\n        },\n        \"first_ran_at\": null,\n        \"last_ran_at\": null,\n        \"matched\": 0,\n        \"ran\": 0\n      },\n      \"hook_type\": \"command\",\n      \"id\": \"PreToolUse:1:0\",\n      \"matcher\": \"Edit|Write\"\n    },\n    {\n      \"class\": \"firing\",\n      \"command\": \"audit-all.sh\",\n      \"event\": \"PreToolUse\",\n      \"evidence\": {\n        \"effects\": {\n          \"consumed_output\": 0,\n          \"denial\": 1,\n          \"modification\": 0\n        },\n        \"first_ran_at\": \"2026-01-01T09:00:05Z\",\n        \"last_ran_at\": \"2026-01-01T09:00:05Z\",\n        \"matched\": 1,\n        \"ran\": 1\n      },\n      \"hook_type\": \"command\",\n      \"id\": \"PreToolUse:2:0\",\n      \"matcher\": \"\"\n    },\n    {\n      \"class\": \"firing-without-effect\",\n      \"command\": \"log-bash.sh\",\n      \"event\": \"PostToolUse\",\n      \"evidence\": {\n        \"effects\": {\n          \"consumed_output\": 0,\n          \"denial\": 0,\n          \"modification\": 0\n        },\n        \"first_ran_at\": \"2026-01-01T09:00:07Z\",\n        \"last_ran_at\": \"2026-01-01T09:00:07Z\",\n        \"matched\": 1,\n        \"ran\": 1\n      },\n      \"hook_type\": \"command\",\n      \"id\": \"PostToolUse:0:0\",\n      \"matcher\": \"Bash\"\n    },\n    {\n      \"class\": \"firing-without-effect\",\n      \"command\": \"note-prompt.sh\",\n      \"event\": \"UserPromptSubmit\",\n      \"evidence\": {\n        \"effects\": {\n          \"consumed_output\": 0,\n          \"denial\": 0,\n          \"modification\": 0\n        },\n        \"first_ran_at\": \"2026-01-01T09:00:00Z\",\n        \"last_ran_at\": \"2026-01-01T09:00:00Z\",\n        \"matched\": 1,\n        \"ran\": 1\n      },\n      \"hook_type\": \"command\",\n      \"id\": \"UserPromptSubmit:0:0\",\n      \"matcher\": null\n    },\n    {\n      \"class\": \"firing-without-effect\",\n      \"command\": \"wrap-up.sh\",\n      \"event\": \"Stop\",\n      \"evidence\": {\n        \"effects\": {\n          \"consumed_output\": 0,\n          \"denial\": 0,\n          \"modification\": 0\n        },\n        \"first_ran_at\": \"2026-01-01T09:01:00Z\",\n        \"last_ran_at\": \"2026-01-01T09:01:00Z\",\n        \"matched\": 1,\n        \"ran\": 1\n      },\n      \"hook_type\": \"command\",\n      \"id\": \"Stop:0:0\",\n      \"matcher\": null\n    }\n  ],\n  \"near_misses\": [],\n  \"session_sources\": [\n    \"session.jsonl\"\n  ],\n  \"window\": {\n    \"end\": null,\n    \"start\": null\n  }\n}\n"
+    },
+    {
+     "path": "report.md",
+     "text": "# hookdoctor examination\n\nFormat hookdoctor-report/1\nConfiguration source settings.json\nSession sources session.jsonl\nWindow start None end None\n\n## Hooks\n\n### guard-bash.sh\n\nIdentifier PreToolUse:0:0\nEvent PreToolUse\nMatcher Bash\nClass firing\nMatched 1\nRan 1\nEffects denial 1, modification 0, consumed output 0\nFirst ran at 2026-01-01T09:00:05Z\nLast ran at 2026-01-01T09:00:05Z\n\n### lint-edit.py\n\nIdentifier PreToolUse:1:0\nEvent PreToolUse\nMatcher Edit|Write\nClass silent\nMatched 0\nRan 0\nEffects denial 0, modification 0, consumed output 0\nFirst ran at None\nLast ran at None\n\n### audit-all.sh\n\nIdentifier PreToolUse:2:0\nEvent PreToolUse\nMatcher \nClass firing\nMatched 1\nRan 1\nEffects denial 1, modification 0, consumed output 0\nFirst ran at 2026-01-01T09:00:05Z\nLast ran at 2026-01-01T09:00:05Z\n\n### log-bash.sh\n\nIdentifier PostToolUse:0:0\nEvent PostToolUse\nMatcher Bash\nClass firing-without-effect\nMatched 1\nRan 1\nEffects denial 0, modification 0, consumed output 0\nFirst ran at 2026-01-01T09:00:07Z\nLast ran at 2026-01-01T09:00:07Z\n\n### note-prompt.sh\n\nIdentifier UserPromptSubmit:0:0\nEvent UserPromptSubmit\nMatcher None\nClass firing-without-effect\nMatched 1\nRan 1\nEffects denial 0, modification 0, consumed output 0\nFirst ran at 2026-01-01T09:00:00Z\nLast ran at 2026-01-01T09:00:00Z\n\n### wrap-up.sh\n\nIdentifier Stop:0:0\nEvent Stop\nMatcher None\nClass firing-without-effect\nMatched 1\nRan 1\nEffects denial 0, modification 0, consumed output 0\nFirst ran at 2026-01-01T09:01:00Z\nLast ran at 2026-01-01T09:01:00Z\n\n## Near misses\n\nNone.\n"
+    }
+   ]
+  },
+  {
+   "name": "a repeated single flag keeps its last value",
+   "section": "arguments",
+   "inputs": [
+    {
+     "path": "settings.json",
+     "text": "{\"hooks\": {\"PreToolUse\": [{\"matcher\": \"Bash\", \"hooks\": [{\"type\": \"command\", \"command\": \"guard-bash.sh\"}]}, {\"matcher\": \"Edit|Write\", \"hooks\": [{\"type\": \"command\", \"command\": \"lint-edit.py\"}]}, {\"matcher\": \"\", \"hooks\": [{\"type\": \"command\", \"command\": \"audit-all.sh\"}]}], \"PostToolUse\": [{\"matcher\": \"Bash\", \"hooks\": [{\"type\": \"command\", \"command\": \"log-bash.sh\"}]}], \"UserPromptSubmit\": [{\"hooks\": [{\"type\": \"command\", \"command\": \"note-prompt.sh\"}]}], \"Stop\": [{\"hooks\": [{\"type\": \"command\", \"command\": \"wrap-up.sh\"}]}]}}"
+    },
+    {
+     "path": "session.jsonl",
+     "text": "{\"type\": \"user\", \"timestamp\": \"2026-01-01T09:00:00Z\", \"sessionId\": \"synthetic-session-1\", \"message\": {\"role\": \"user\", \"content\": \"please run the tests\"}}\n{\"type\": \"assistant\", \"timestamp\": \"2026-01-01T09:00:05Z\", \"sessionId\": \"synthetic-session-1\", \"message\": {\"role\": \"assistant\", \"content\": [{\"type\": \"tool_use\", \"id\": \"call-1\", \"name\": \"Bash\", \"input\": {\"command\": \"synthetic\"}}]}}\n{\"type\": \"user\", \"timestamp\": \"2026-01-01T09:00:07Z\", \"sessionId\": \"synthetic-session-1\", \"message\": {\"role\": \"user\", \"content\": [{\"type\": \"tool_result\", \"tool_use_id\": \"call-1\", \"content\": \"denied by policy\", \"is_error\": true}]}}\n{\"type\": \"system\", \"subtype\": \"stop_hook_summary\", \"timestamp\": \"2026-01-01T09:01:00Z\", \"sessionId\": \"synthetic-session-1\", \"hookCount\": 1, \"hookInfos\": [{\"command\": \"wrap-up.sh\"}], \"hookErrors\": [], \"preventedContinuation\": false, \"hasOutput\": false}\n"
+    }
+   ],
+   "steps": [
+    {
+     "argv": [
+      "--config",
+      "{DIR}/missing.json",
+      "--config",
+      "{DIR}/settings.json",
+      "--session",
+      "{DIR}/session.jsonl",
+      "--output",
+      "{DIR}/report.json",
+      "--report",
+      "{DIR}/report.md"
+     ],
+     "exit": 0,
+     "stderr": "",
+     "stdout_empty": true
+    }
+   ],
+   "outputs": [
+    {
+     "path": "report.json",
+     "text": "{\n  \"config_source\": \"settings.json\",\n  \"format\": \"hookdoctor-report/1\",\n  \"hooks\": [\n    {\n      \"class\": \"firing\",\n      \"command\": \"guard-bash.sh\",\n      \"event\": \"PreToolUse\",\n      \"evidence\": {\n        \"effects\": {\n          \"consumed_output\": 0,\n          \"denial\": 1,\n          \"modification\": 0\n        },\n        \"first_ran_at\": \"2026-01-01T09:00:05Z\",\n        \"last_ran_at\": \"2026-01-01T09:00:05Z\",\n        \"matched\": 1,\n        \"ran\": 1\n      },\n      \"hook_type\": \"command\",\n      \"id\": \"PreToolUse:0:0\",\n      \"matcher\": \"Bash\"\n    },\n    {\n      \"class\": \"silent\",\n      \"command\": \"lint-edit.py\",\n      \"event\": \"PreToolUse\",\n      \"evidence\": {\n        \"effects\": {\n          \"consumed_output\": 0,\n          \"denial\": 0,\n          \"modification\": 0\n        },\n        \"first_ran_at\": null,\n        \"last_ran_at\": null,\n        \"matched\": 0,\n        \"ran\": 0\n      },\n      \"hook_type\": \"command\",\n      \"id\": \"PreToolUse:1:0\",\n      \"matcher\": \"Edit|Write\"\n    },\n    {\n      \"class\": \"firing\",\n      \"command\": \"audit-all.sh\",\n      \"event\": \"PreToolUse\",\n      \"evidence\": {\n        \"effects\": {\n          \"consumed_output\": 0,\n          \"denial\": 1,\n          \"modification\": 0\n        },\n        \"first_ran_at\": \"2026-01-01T09:00:05Z\",\n        \"last_ran_at\": \"2026-01-01T09:00:05Z\",\n        \"matched\": 1,\n        \"ran\": 1\n      },\n      \"hook_type\": \"command\",\n      \"id\": \"PreToolUse:2:0\",\n      \"matcher\": \"\"\n    },\n    {\n      \"class\": \"firing-without-effect\",\n      \"command\": \"log-bash.sh\",\n      \"event\": \"PostToolUse\",\n      \"evidence\": {\n        \"effects\": {\n          \"consumed_output\": 0,\n          \"denial\": 0,\n          \"modification\": 0\n        },\n        \"first_ran_at\": \"2026-01-01T09:00:07Z\",\n        \"last_ran_at\": \"2026-01-01T09:00:07Z\",\n        \"matched\": 1,\n        \"ran\": 1\n      },\n      \"hook_type\": \"command\",\n      \"id\": \"PostToolUse:0:0\",\n      \"matcher\": \"Bash\"\n    },\n    {\n      \"class\": \"firing-without-effect\",\n      \"command\": \"note-prompt.sh\",\n      \"event\": \"UserPromptSubmit\",\n      \"evidence\": {\n        \"effects\": {\n          \"consumed_output\": 0,\n          \"denial\": 0,\n          \"modification\": 0\n        },\n        \"first_ran_at\": \"2026-01-01T09:00:00Z\",\n        \"last_ran_at\": \"2026-01-01T09:00:00Z\",\n        \"matched\": 1,\n        \"ran\": 1\n      },\n      \"hook_type\": \"command\",\n      \"id\": \"UserPromptSubmit:0:0\",\n      \"matcher\": null\n    },\n    {\n      \"class\": \"firing-without-effect\",\n      \"command\": \"wrap-up.sh\",\n      \"event\": \"Stop\",\n      \"evidence\": {\n        \"effects\": {\n          \"consumed_output\": 0,\n          \"denial\": 0,\n          \"modification\": 0\n        },\n        \"first_ran_at\": \"2026-01-01T09:01:00Z\",\n        \"last_ran_at\": \"2026-01-01T09:01:00Z\",\n        \"matched\": 1,\n        \"ran\": 1\n      },\n      \"hook_type\": \"command\",\n      \"id\": \"Stop:0:0\",\n      \"matcher\": null\n    }\n  ],\n  \"near_misses\": [],\n  \"session_sources\": [\n    \"session.jsonl\"\n  ],\n  \"window\": {\n    \"end\": null,\n    \"start\": null\n  }\n}\n"
+    },
+    {
+     "path": "report.md",
+     "text": "# hookdoctor examination\n\nFormat hookdoctor-report/1\nConfiguration source settings.json\nSession sources session.jsonl\nWindow start None end None\n\n## Hooks\n\n### guard-bash.sh\n\nIdentifier PreToolUse:0:0\nEvent PreToolUse\nMatcher Bash\nClass firing\nMatched 1\nRan 1\nEffects denial 1, modification 0, consumed output 0\nFirst ran at 2026-01-01T09:00:05Z\nLast ran at 2026-01-01T09:00:05Z\n\n### lint-edit.py\n\nIdentifier PreToolUse:1:0\nEvent PreToolUse\nMatcher Edit|Write\nClass silent\nMatched 0\nRan 0\nEffects denial 0, modification 0, consumed output 0\nFirst ran at None\nLast ran at None\n\n### audit-all.sh\n\nIdentifier PreToolUse:2:0\nEvent PreToolUse\nMatcher \nClass firing\nMatched 1\nRan 1\nEffects denial 1, modification 0, consumed output 0\nFirst ran at 2026-01-01T09:00:05Z\nLast ran at 2026-01-01T09:00:05Z\n\n### log-bash.sh\n\nIdentifier PostToolUse:0:0\nEvent PostToolUse\nMatcher Bash\nClass firing-without-effect\nMatched 1\nRan 1\nEffects denial 0, modification 0, consumed output 0\nFirst ran at 2026-01-01T09:00:07Z\nLast ran at 2026-01-01T09:00:07Z\n\n### note-prompt.sh\n\nIdentifier UserPromptSubmit:0:0\nEvent UserPromptSubmit\nMatcher None\nClass firing-without-effect\nMatched 1\nRan 1\nEffects denial 0, modification 0, consumed output 0\nFirst ran at 2026-01-01T09:00:00Z\nLast ran at 2026-01-01T09:00:00Z\n\n### wrap-up.sh\n\nIdentifier Stop:0:0\nEvent Stop\nMatcher None\nClass firing-without-effect\nMatched 1\nRan 1\nEffects denial 0, modification 0, consumed output 0\nFirst ran at 2026-01-01T09:01:00Z\nLast ran at 2026-01-01T09:01:00Z\n\n## Near misses\n\nNone.\n"
+    }
+   ]
+  },
+  {
+   "name": "the help flag in its spellings",
+   "section": "arguments",
+   "inputs": [],
+   "steps": [
+    {
+     "argv": [
+      "-h"
+     ],
+     "exit": 0,
+     "stderr": "",
+     "stdout_empty": false
+    },
+    {
+     "argv": [
+      "--help"
+     ],
+     "exit": 0,
+     "stderr": "",
+     "stdout_empty": false
+    },
+    {
+     "argv": [
+      "--he"
+     ],
+     "exit": 0,
+     "stderr": "",
+     "stdout_empty": false
+    }
+   ],
+   "outputs": []
+  },
+  {
+   "name": "the help cluster",
+   "section": "arguments",
+   "inputs": [],
+   "steps": [
+    {
+     "argv": [
+      "-hx"
+     ],
+     "exit": 0,
+     "stderr": "",
+     "stdout_empty": false
+    },
+    {
+     "argv": [
+      "-hh"
+     ],
+     "exit": 0,
+     "stderr": "",
+     "stdout_empty": false
+    },
+    {
+     "argv": [
+      "-ha=b"
+     ],
+     "exit": 0,
+     "stderr": "",
+     "stdout_empty": false
+    }
+   ],
+   "outputs": []
+  },
+  {
+   "name": "the help flag carrying an equals value",
+   "section": "arguments",
+   "inputs": [],
+   "steps": [
+    {
+     "argv": [
+      "-h=x"
+     ],
+     "exit": 2,
+     "stderr": null,
+     "stdout_empty": true
+    },
+    {
+     "argv": [
+      "--help=x"
+     ],
+     "exit": 2,
+     "stderr": null,
+     "stdout_empty": true
+    },
+    {
+     "argv": [
+      "-h=x",
+      "-h"
+     ],
+     "exit": 2,
+     "stderr": null,
+     "stdout_empty": true
+    }
+   ],
+   "outputs": []
+  },
+  {
+   "name": "a cluster the help flag does not lead",
+   "section": "arguments",
+   "inputs": [],
+   "steps": [
+    {
+     "argv": [
+      "-xh"
+     ],
+     "exit": 2,
+     "stderr": null,
+     "stdout_empty": true
+    }
+   ],
+   "outputs": []
+  },
+  {
+   "name": "the separator refuses what follows it",
+   "section": "arguments",
+   "inputs": [
+    {
+     "path": "settings.json",
+     "text": "{\"hooks\": {\"PreToolUse\": [{\"matcher\": \"Bash\", \"hooks\": [{\"type\": \"command\", \"command\": \"guard-bash.sh\"}]}, {\"matcher\": \"Edit|Write\", \"hooks\": [{\"type\": \"command\", \"command\": \"lint-edit.py\"}]}, {\"matcher\": \"\", \"hooks\": [{\"type\": \"command\", \"command\": \"audit-all.sh\"}]}], \"PostToolUse\": [{\"matcher\": \"Bash\", \"hooks\": [{\"type\": \"command\", \"command\": \"log-bash.sh\"}]}], \"UserPromptSubmit\": [{\"hooks\": [{\"type\": \"command\", \"command\": \"note-prompt.sh\"}]}], \"Stop\": [{\"hooks\": [{\"type\": \"command\", \"command\": \"wrap-up.sh\"}]}]}}"
+    },
+    {
+     "path": "session.jsonl",
+     "text": "{\"type\": \"user\", \"timestamp\": \"2026-01-01T09:00:00Z\", \"sessionId\": \"synthetic-session-1\", \"message\": {\"role\": \"user\", \"content\": \"please run the tests\"}}\n{\"type\": \"assistant\", \"timestamp\": \"2026-01-01T09:00:05Z\", \"sessionId\": \"synthetic-session-1\", \"message\": {\"role\": \"assistant\", \"content\": [{\"type\": \"tool_use\", \"id\": \"call-1\", \"name\": \"Bash\", \"input\": {\"command\": \"synthetic\"}}]}}\n{\"type\": \"user\", \"timestamp\": \"2026-01-01T09:00:07Z\", \"sessionId\": \"synthetic-session-1\", \"message\": {\"role\": \"user\", \"content\": [{\"type\": \"tool_result\", \"tool_use_id\": \"call-1\", \"content\": \"denied by policy\", \"is_error\": true}]}}\n{\"type\": \"system\", \"subtype\": \"stop_hook_summary\", \"timestamp\": \"2026-01-01T09:01:00Z\", \"sessionId\": \"synthetic-session-1\", \"hookCount\": 1, \"hookInfos\": [{\"command\": \"wrap-up.sh\"}], \"hookErrors\": [], \"preventedContinuation\": false, \"hasOutput\": false}\n"
+    }
+   ],
+   "steps": [
+    {
+     "argv": [
+      "--config",
+      "{DIR}/settings.json",
+      "--session",
+      "{DIR}/session.jsonl",
+      "--output",
+      "{DIR}/report.json",
+      "--report",
+      "{DIR}/report.md",
+      "--"
+     ],
+     "exit": 2,
+     "stderr": null,
+     "stdout_empty": true
+    },
+    {
+     "argv": [
+      "--",
+      "-h"
+     ],
+     "exit": 2,
+     "stderr": null,
+     "stdout_empty": true
+    }
+   ],
+   "outputs": []
+  },
+  {
+   "name": "a value that is a negative number",
+   "section": "arguments",
+   "inputs": [],
+   "steps": [
+    {
+     "argv": [
+      "--config",
+      "-.5",
+      "--session",
+      "session.jsonl",
+      "--output",
+      "report.json",
+      "--report",
+      "report.md"
+     ],
+     "exit": 2,
+     "stderr": "hookdoctor error: the configuration could not be read\n",
+     "stdout_empty": true
+    }
+   ],
+   "outputs": []
+  },
+  {
+   "name": "a value that only looks like a number",
+   "section": "arguments",
+   "inputs": [],
+   "steps": [
+    {
+     "argv": [
+      "--config",
+      "-5.",
+      "--session",
+      "session.jsonl",
+      "--output",
+      "report.json",
+      "--report",
+      "report.md"
+     ],
+     "exit": 2,
+     "stderr": null,
+     "stdout_empty": true
+    }
+   ],
+   "outputs": []
+  },
+  {
+   "name": "a lone dash is a value",
+   "section": "arguments",
+   "inputs": [],
+   "steps": [
+    {
+     "argv": [
+      "--config",
+      "-",
+      "--session",
+      "session.jsonl",
+      "--output",
+      "report.json",
+      "--report",
+      "report.md"
+     ],
+     "exit": 2,
+     "stderr": "hookdoctor error: the configuration could not be read\n",
+     "stdout_empty": true
+    }
+   ],
+   "outputs": []
+  },
+  {
+   "name": "an empty value in the equals form",
+   "section": "arguments",
+   "inputs": [],
+   "steps": [
+    {
+     "argv": [
+      "--config=",
+      "--session",
+      "session.jsonl",
+      "--output",
+      "report.json",
+      "--report",
+      "report.md"
+     ],
+     "exit": 2,
+     "stderr": "hookdoctor error: the configuration could not be read\n",
+     "stdout_empty": true
+    }
+   ],
+   "outputs": []
+  },
+  {
+   "name": "missing inputs are refused",
+   "section": "refusals",
+   "inputs": [
+    {
+     "path": "settings.json",
+     "text": "{\"hooks\": {\"PreToolUse\": [{\"matcher\": \"Bash\", \"hooks\": [{\"type\": \"command\", \"command\": \"guard-bash.sh\"}]}, {\"matcher\": \"Edit|Write\", \"hooks\": [{\"type\": \"command\", \"command\": \"lint-edit.py\"}]}, {\"matcher\": \"\", \"hooks\": [{\"type\": \"command\", \"command\": \"audit-all.sh\"}]}], \"PostToolUse\": [{\"matcher\": \"Bash\", \"hooks\": [{\"type\": \"command\", \"command\": \"log-bash.sh\"}]}], \"UserPromptSubmit\": [{\"hooks\": [{\"type\": \"command\", \"command\": \"note-prompt.sh\"}]}], \"Stop\": [{\"hooks\": [{\"type\": \"command\", \"command\": \"wrap-up.sh\"}]}]}}"
+    },
+    {
+     "path": "session.jsonl",
+     "text": "{\"type\": \"user\", \"timestamp\": \"2026-01-01T09:00:00Z\", \"sessionId\": \"synthetic-session-1\", \"message\": {\"role\": \"user\", \"content\": \"please run the tests\"}}\n{\"type\": \"assistant\", \"timestamp\": \"2026-01-01T09:00:05Z\", \"sessionId\": \"synthetic-session-1\", \"message\": {\"role\": \"assistant\", \"content\": [{\"type\": \"tool_use\", \"id\": \"call-1\", \"name\": \"Bash\", \"input\": {\"command\": \"synthetic\"}}]}}\n{\"type\": \"user\", \"timestamp\": \"2026-01-01T09:00:07Z\", \"sessionId\": \"synthetic-session-1\", \"message\": {\"role\": \"user\", \"content\": [{\"type\": \"tool_result\", \"tool_use_id\": \"call-1\", \"content\": \"denied by policy\", \"is_error\": true}]}}\n{\"type\": \"system\", \"subtype\": \"stop_hook_summary\", \"timestamp\": \"2026-01-01T09:01:00Z\", \"sessionId\": \"synthetic-session-1\", \"hookCount\": 1, \"hookInfos\": [{\"command\": \"wrap-up.sh\"}], \"hookErrors\": [], \"preventedContinuation\": false, \"hasOutput\": false}\n"
+    }
+   ],
+   "steps": [
+    {
+     "argv": [
+      "--config",
+      "{DIR}/missing.json",
+      "--session",
+      "{DIR}/session.jsonl",
+      "--output",
+      "{DIR}/report.json",
+      "--report",
+      "{DIR}/report.md"
+     ],
+     "exit": 2,
+     "stderr": "hookdoctor error: the configuration could not be read\n",
+     "stdout_empty": true
+    },
+    {
+     "argv": [
+      "--config",
+      "{DIR}/settings.json",
+      "--session",
+      "{DIR}/missing.jsonl",
+      "--output",
+      "{DIR}/report.json",
+      "--report",
+      "{DIR}/report.md"
+     ],
+     "exit": 2,
+     "stderr": "hookdoctor error: the session file could not be read\n",
+     "stdout_empty": true
+    }
+   ],
+   "outputs": []
+  },
+  {
+   "name": "a configuration that is not valid JSON",
+   "section": "refusals",
+   "inputs": [
+    {
+     "path": "settings.json",
+     "text": "not json {"
+    },
+    {
+     "path": "session.jsonl",
+     "text": "{\"type\": \"user\", \"timestamp\": \"2026-01-01T09:00:00Z\", \"sessionId\": \"synthetic-session-1\", \"message\": {\"role\": \"user\", \"content\": \"please run the tests\"}}\n{\"type\": \"assistant\", \"timestamp\": \"2026-01-01T09:00:05Z\", \"sessionId\": \"synthetic-session-1\", \"message\": {\"role\": \"assistant\", \"content\": [{\"type\": \"tool_use\", \"id\": \"call-1\", \"name\": \"Bash\", \"input\": {\"command\": \"synthetic\"}}]}}\n{\"type\": \"user\", \"timestamp\": \"2026-01-01T09:00:07Z\", \"sessionId\": \"synthetic-session-1\", \"message\": {\"role\": \"user\", \"content\": [{\"type\": \"tool_result\", \"tool_use_id\": \"call-1\", \"content\": \"denied by policy\", \"is_error\": true}]}}\n{\"type\": \"system\", \"subtype\": \"stop_hook_summary\", \"timestamp\": \"2026-01-01T09:01:00Z\", \"sessionId\": \"synthetic-session-1\", \"hookCount\": 1, \"hookInfos\": [{\"command\": \"wrap-up.sh\"}], \"hookErrors\": [], \"preventedContinuation\": false, \"hasOutput\": false}\n"
+    }
+   ],
+   "steps": [
+    {
+     "argv": [
+      "--config",
+      "{DIR}/settings.json",
+      "--session",
+      "{DIR}/session.jsonl",
+      "--output",
+      "{DIR}/report.json",
+      "--report",
+      "{DIR}/report.md"
+     ],
+     "exit": 2,
+     "stderr": "hookdoctor error: the configuration is not valid JSON\n",
+     "stdout_empty": true
+    }
+   ],
+   "outputs": []
+  },
+  {
+   "name": "a repeated key names the key",
+   "section": "refusals",
+   "inputs": [
+    {
+     "path": "settings.json",
+     "text": "{\"hooks\": {}, \"hooks\": {}}"
+    },
+    {
+     "path": "session.jsonl",
+     "text": "{\"type\": \"user\", \"timestamp\": \"2026-01-01T09:00:00Z\", \"sessionId\": \"synthetic-session-1\", \"message\": {\"role\": \"user\", \"content\": \"please run the tests\"}}\n{\"type\": \"assistant\", \"timestamp\": \"2026-01-01T09:00:05Z\", \"sessionId\": \"synthetic-session-1\", \"message\": {\"role\": \"assistant\", \"content\": [{\"type\": \"tool_use\", \"id\": \"call-1\", \"name\": \"Bash\", \"input\": {\"command\": \"synthetic\"}}]}}\n{\"type\": \"user\", \"timestamp\": \"2026-01-01T09:00:07Z\", \"sessionId\": \"synthetic-session-1\", \"message\": {\"role\": \"user\", \"content\": [{\"type\": \"tool_result\", \"tool_use_id\": \"call-1\", \"content\": \"denied by policy\", \"is_error\": true}]}}\n{\"type\": \"system\", \"subtype\": \"stop_hook_summary\", \"timestamp\": \"2026-01-01T09:01:00Z\", \"sessionId\": \"synthetic-session-1\", \"hookCount\": 1, \"hookInfos\": [{\"command\": \"wrap-up.sh\"}], \"hookErrors\": [], \"preventedContinuation\": false, \"hasOutput\": false}\n"
+    }
+   ],
+   "steps": [
+    {
+     "argv": [
+      "--config",
+      "{DIR}/settings.json",
+      "--session",
+      "{DIR}/session.jsonl",
+      "--output",
+      "{DIR}/report.json",
+      "--report",
+      "{DIR}/report.md"
+     ],
+     "exit": 2,
+     "stderr": "hookdoctor error: the configuration carries the key hooks more than once\n",
+     "stdout_empty": true
+    }
+   ],
+   "outputs": []
+  },
+  {
+   "name": "a repeated key at depth names the first repeat",
+   "section": "refusals",
+   "inputs": [
+    {
+     "path": "settings.json",
+     "text": "{\"hooks\": {\"PreToolUse\": [{\"matcher\": \"Bash\", \"matcher\": \"Edit\", \"hooks\": [{\"type\": \"command\", \"command\": \"one.sh\"}], \"hooks\": [{\"type\": \"command\", \"command\": \"two.sh\"}]}]}}"
+    },
+    {
+     "path": "session.jsonl",
+     "text": "{\"type\": \"user\", \"timestamp\": \"2026-01-01T09:00:00Z\", \"sessionId\": \"synthetic-session-1\", \"message\": {\"role\": \"user\", \"content\": \"please run the tests\"}}\n{\"type\": \"assistant\", \"timestamp\": \"2026-01-01T09:00:05Z\", \"sessionId\": \"synthetic-session-1\", \"message\": {\"role\": \"assistant\", \"content\": [{\"type\": \"tool_use\", \"id\": \"call-1\", \"name\": \"Bash\", \"input\": {\"command\": \"synthetic\"}}]}}\n{\"type\": \"user\", \"timestamp\": \"2026-01-01T09:00:07Z\", \"sessionId\": \"synthetic-session-1\", \"message\": {\"role\": \"user\", \"content\": [{\"type\": \"tool_result\", \"tool_use_id\": \"call-1\", \"content\": \"denied by policy\", \"is_error\": true}]}}\n{\"type\": \"system\", \"subtype\": \"stop_hook_summary\", \"timestamp\": \"2026-01-01T09:01:00Z\", \"sessionId\": \"synthetic-session-1\", \"hookCount\": 1, \"hookInfos\": [{\"command\": \"wrap-up.sh\"}], \"hookErrors\": [], \"preventedContinuation\": false, \"hasOutput\": false}\n"
+    }
+   ],
+   "steps": [
+    {
+     "argv": [
+      "--config",
+      "{DIR}/settings.json",
+      "--session",
+      "{DIR}/session.jsonl",
+      "--output",
+      "{DIR}/report.json",
+      "--report",
+      "{DIR}/report.md"
+     ],
+     "exit": 2,
+     "stderr": "hookdoctor error: the configuration carries the key matcher more than once\n",
+     "stdout_empty": true
+    }
+   ],
+   "outputs": []
+  },
+  {
+   "name": "a session file that is not UTF-8 text",
+   "section": "refusals",
+   "inputs": [
+    {
+     "path": "settings.json",
+     "text": "{\"hooks\": {\"PreToolUse\": [{\"matcher\": \"Bash\", \"hooks\": [{\"type\": \"command\", \"command\": \"guard-bash.sh\"}]}, {\"matcher\": \"Edit|Write\", \"hooks\": [{\"type\": \"command\", \"command\": \"lint-edit.py\"}]}, {\"matcher\": \"\", \"hooks\": [{\"type\": \"command\", \"command\": \"audit-all.sh\"}]}], \"PostToolUse\": [{\"matcher\": \"Bash\", \"hooks\": [{\"type\": \"command\", \"command\": \"log-bash.sh\"}]}], \"UserPromptSubmit\": [{\"hooks\": [{\"type\": \"command\", \"command\": \"note-prompt.sh\"}]}], \"Stop\": [{\"hooks\": [{\"type\": \"command\", \"command\": \"wrap-up.sh\"}]}]}}"
+    },
+    {
+     "path": "session.jsonl",
+     "hex": "fffe7b0a"
+    }
+   ],
+   "steps": [
+    {
+     "argv": [
+      "--config",
+      "{DIR}/settings.json",
+      "--session",
+      "{DIR}/session.jsonl",
+      "--output",
+      "{DIR}/report.json",
+      "--report",
+      "{DIR}/report.md"
+     ],
+     "exit": 2,
+     "stderr": "hookdoctor error: the session file is not UTF-8 text\n",
+     "stdout_empty": true
+    }
+   ],
+   "outputs": []
+  },
+  {
+   "name": "a session line that is not JSON",
+   "section": "refusals",
+   "inputs": [
+    {
+     "path": "settings.json",
+     "text": "{\"hooks\": {\"PreToolUse\": [{\"matcher\": \"Bash\", \"hooks\": [{\"type\": \"command\", \"command\": \"guard-bash.sh\"}]}, {\"matcher\": \"Edit|Write\", \"hooks\": [{\"type\": \"command\", \"command\": \"lint-edit.py\"}]}, {\"matcher\": \"\", \"hooks\": [{\"type\": \"command\", \"command\": \"audit-all.sh\"}]}], \"PostToolUse\": [{\"matcher\": \"Bash\", \"hooks\": [{\"type\": \"command\", \"command\": \"log-bash.sh\"}]}], \"UserPromptSubmit\": [{\"hooks\": [{\"type\": \"command\", \"command\": \"note-prompt.sh\"}]}], \"Stop\": [{\"hooks\": [{\"type\": \"command\", \"command\": \"wrap-up.sh\"}]}]}}"
+    },
+    {
+     "path": "session.jsonl",
+     "text": "this is not json\n"
+    }
+   ],
+   "steps": [
+    {
+     "argv": [
+      "--config",
+      "{DIR}/settings.json",
+      "--session",
+      "{DIR}/session.jsonl",
+      "--output",
+      "{DIR}/report.json",
+      "--report",
+      "{DIR}/report.md"
+     ],
+     "exit": 2,
+     "stderr": "hookdoctor error: a session line is not valid JSON\n",
+     "stdout_empty": true
+    }
+   ],
+   "outputs": []
+  },
+  {
+   "name": "the window word refused",
+   "section": "refusals",
+   "inputs": [
+    {
+     "path": "settings.json",
+     "text": "{\"hooks\": {\"PreToolUse\": [{\"matcher\": \"Bash\", \"hooks\": [{\"type\": \"command\", \"command\": \"guard-bash.sh\"}]}, {\"matcher\": \"Edit|Write\", \"hooks\": [{\"type\": \"command\", \"command\": \"lint-edit.py\"}]}, {\"matcher\": \"\", \"hooks\": [{\"type\": \"command\", \"command\": \"audit-all.sh\"}]}], \"PostToolUse\": [{\"matcher\": \"Bash\", \"hooks\": [{\"type\": \"command\", \"command\": \"log-bash.sh\"}]}], \"UserPromptSubmit\": [{\"hooks\": [{\"type\": \"command\", \"command\": \"note-prompt.sh\"}]}], \"Stop\": [{\"hooks\": [{\"type\": \"command\", \"command\": \"wrap-up.sh\"}]}]}}"
+    },
+    {
+     "path": "session.jsonl",
+     "text": "{\"type\": \"user\", \"timestamp\": \"2026-01-01T09:00:00Z\", \"sessionId\": \"synthetic-session-1\", \"message\": {\"role\": \"user\", \"content\": \"please run the tests\"}}\n{\"type\": \"assistant\", \"timestamp\": \"2026-01-01T09:00:05Z\", \"sessionId\": \"synthetic-session-1\", \"message\": {\"role\": \"assistant\", \"content\": [{\"type\": \"tool_use\", \"id\": \"call-1\", \"name\": \"Bash\", \"input\": {\"command\": \"synthetic\"}}]}}\n{\"type\": \"user\", \"timestamp\": \"2026-01-01T09:00:07Z\", \"sessionId\": \"synthetic-session-1\", \"message\": {\"role\": \"user\", \"content\": [{\"type\": \"tool_result\", \"tool_use_id\": \"call-1\", \"content\": \"denied by policy\", \"is_error\": true}]}}\n{\"type\": \"system\", \"subtype\": \"stop_hook_summary\", \"timestamp\": \"2026-01-01T09:01:00Z\", \"sessionId\": \"synthetic-session-1\", \"hookCount\": 1, \"hookInfos\": [{\"command\": \"wrap-up.sh\"}], \"hookErrors\": [], \"preventedContinuation\": false, \"hasOutput\": false}\n"
+    }
+   ],
+   "steps": [
+    {
+     "argv": [
+      "--config",
+      "{DIR}/settings.json",
+      "--session",
+      "{DIR}/session.jsonl",
+      "--output",
+      "{DIR}/report.json",
+      "--report",
+      "{DIR}/report.md",
+      "--window-start",
+      "not-a-timestamp"
+     ],
+     "exit": 2,
+     "stderr": "hookdoctor error: the window start is not a timestamp\n",
+     "stdout_empty": true
+    }
+   ],
+   "outputs": []
+  },
+  {
+   "name": "the session label count mismatch",
+   "section": "refusals",
+   "inputs": [
+    {
+     "path": "settings.json",
+     "text": "{\"hooks\": {\"PreToolUse\": [{\"matcher\": \"Bash\", \"hooks\": [{\"type\": \"command\", \"command\": \"guard-bash.sh\"}]}, {\"matcher\": \"Edit|Write\", \"hooks\": [{\"type\": \"command\", \"command\": \"lint-edit.py\"}]}, {\"matcher\": \"\", \"hooks\": [{\"type\": \"command\", \"command\": \"audit-all.sh\"}]}], \"PostToolUse\": [{\"matcher\": \"Bash\", \"hooks\": [{\"type\": \"command\", \"command\": \"log-bash.sh\"}]}], \"UserPromptSubmit\": [{\"hooks\": [{\"type\": \"command\", \"command\": \"note-prompt.sh\"}]}], \"Stop\": [{\"hooks\": [{\"type\": \"command\", \"command\": \"wrap-up.sh\"}]}]}}"
+    },
+    {
+     "path": "one.jsonl",
+     "text": "{\"type\": \"user\", \"timestamp\": \"2026-01-01T09:00:00Z\", \"sessionId\": \"synthetic-session-1\", \"message\": {\"role\": \"user\", \"content\": \"please run the tests\"}}\n{\"type\": \"assistant\", \"timestamp\": \"2026-01-01T09:00:05Z\", \"sessionId\": \"synthetic-session-1\", \"message\": {\"role\": \"assistant\", \"content\": [{\"type\": \"tool_use\", \"id\": \"call-1\", \"name\": \"Bash\", \"input\": {\"command\": \"synthetic\"}}]}}\n{\"type\": \"user\", \"timestamp\": \"2026-01-01T09:00:07Z\", \"sessionId\": \"synthetic-session-1\", \"message\": {\"role\": \"user\", \"content\": [{\"type\": \"tool_result\", \"tool_use_id\": \"call-1\", \"content\": \"denied by policy\", \"is_error\": true}]}}\n{\"type\": \"system\", \"subtype\": \"stop_hook_summary\", \"timestamp\": \"2026-01-01T09:01:00Z\", \"sessionId\": \"synthetic-session-1\", \"hookCount\": 1, \"hookInfos\": [{\"command\": \"wrap-up.sh\"}], \"hookErrors\": [], \"preventedContinuation\": false, \"hasOutput\": false}\n"
+    },
+    {
+     "path": "two.jsonl",
+     "text": "{\"type\": \"user\", \"timestamp\": \"2026-01-02T10:00:00Z\", \"sessionId\": \"synthetic-session-1\", \"message\": {\"role\": \"user\", \"content\": \"please lint the files\"}}\n{\"type\": \"system\", \"subtype\": \"stop_hook_summary\", \"timestamp\": \"2026-01-02T10:01:00Z\", \"sessionId\": \"synthetic-session-1\", \"hookCount\": 1, \"hookInfos\": [{\"command\": \"wrap-up.sh\"}], \"hookErrors\": [], \"preventedContinuation\": false, \"hasOutput\": false}\n"
+    }
+   ],
+   "steps": [
+    {
+     "argv": [
+      "--config",
+      "{DIR}/settings.json",
+      "--session",
+      "{DIR}/one.jsonl",
+      "--session",
+      "{DIR}/two.jsonl",
+      "--output",
+      "{DIR}/report.json",
+      "--report",
+      "{DIR}/report.md",
+      "--session-label",
+      "only-one"
+     ],
+     "exit": 2,
+     "stderr": "hookdoctor error: session labels do not match the session files\n",
+     "stdout_empty": true
+    }
+   ],
+   "outputs": []
+  },
+  {
+   "name": "a configuration with an invalid matcher",
+   "section": "refusals",
+   "inputs": [
+    {
+     "path": "settings.json",
+     "text": "{\"hooks\": {\"PreToolUse\": [{\"matcher\": \"[\", \"hooks\": [{\"type\": \"command\", \"command\": \"one.sh\"}]}]}}"
+    },
+    {
+     "path": "session.jsonl",
+     "text": "{\"type\": \"user\", \"timestamp\": \"2026-01-01T09:00:00Z\", \"sessionId\": \"synthetic-session-1\", \"message\": {\"role\": \"user\", \"content\": \"please run the tests\"}}\n{\"type\": \"assistant\", \"timestamp\": \"2026-01-01T09:00:05Z\", \"sessionId\": \"synthetic-session-1\", \"message\": {\"role\": \"assistant\", \"content\": [{\"type\": \"tool_use\", \"id\": \"call-1\", \"name\": \"Bash\", \"input\": {\"command\": \"synthetic\"}}]}}\n{\"type\": \"user\", \"timestamp\": \"2026-01-01T09:00:07Z\", \"sessionId\": \"synthetic-session-1\", \"message\": {\"role\": \"user\", \"content\": [{\"type\": \"tool_result\", \"tool_use_id\": \"call-1\", \"content\": \"denied by policy\", \"is_error\": true}]}}\n{\"type\": \"system\", \"subtype\": \"stop_hook_summary\", \"timestamp\": \"2026-01-01T09:01:00Z\", \"sessionId\": \"synthetic-session-1\", \"hookCount\": 1, \"hookInfos\": [{\"command\": \"wrap-up.sh\"}], \"hookErrors\": [], \"preventedContinuation\": false, \"hasOutput\": false}\n"
+    }
+   ],
+   "steps": [
+    {
+     "argv": [
+      "--config",
+      "{DIR}/settings.json",
+      "--session",
+      "{DIR}/session.jsonl",
+      "--output",
+      "{DIR}/report.json",
+      "--report",
+      "{DIR}/report.md"
+     ],
+     "exit": 2,
+     "stderr": "hookdoctor error: a matcher is not a valid pattern\n",
+     "stdout_empty": true
+    }
+   ],
+   "outputs": []
+  },
+  {
+   "name": "an output that cannot be written",
+   "section": "write_failure",
+   "inputs": [
+    {
+     "path": "settings.json",
+     "text": "{\"hooks\": {\"PreToolUse\": [{\"matcher\": \"Bash\", \"hooks\": [{\"type\": \"command\", \"command\": \"guard-bash.sh\"}]}, {\"matcher\": \"Edit|Write\", \"hooks\": [{\"type\": \"command\", \"command\": \"lint-edit.py\"}]}, {\"matcher\": \"\", \"hooks\": [{\"type\": \"command\", \"command\": \"audit-all.sh\"}]}], \"PostToolUse\": [{\"matcher\": \"Bash\", \"hooks\": [{\"type\": \"command\", \"command\": \"log-bash.sh\"}]}], \"UserPromptSubmit\": [{\"hooks\": [{\"type\": \"command\", \"command\": \"note-prompt.sh\"}]}], \"Stop\": [{\"hooks\": [{\"type\": \"command\", \"command\": \"wrap-up.sh\"}]}]}}"
+    },
+    {
+     "path": "session.jsonl",
+     "text": "{\"type\": \"user\", \"timestamp\": \"2026-01-01T09:00:00Z\", \"sessionId\": \"synthetic-session-1\", \"message\": {\"role\": \"user\", \"content\": \"please run the tests\"}}\n{\"type\": \"assistant\", \"timestamp\": \"2026-01-01T09:00:05Z\", \"sessionId\": \"synthetic-session-1\", \"message\": {\"role\": \"assistant\", \"content\": [{\"type\": \"tool_use\", \"id\": \"call-1\", \"name\": \"Bash\", \"input\": {\"command\": \"synthetic\"}}]}}\n{\"type\": \"user\", \"timestamp\": \"2026-01-01T09:00:07Z\", \"sessionId\": \"synthetic-session-1\", \"message\": {\"role\": \"user\", \"content\": [{\"type\": \"tool_result\", \"tool_use_id\": \"call-1\", \"content\": \"denied by policy\", \"is_error\": true}]}}\n{\"type\": \"system\", \"subtype\": \"stop_hook_summary\", \"timestamp\": \"2026-01-01T09:01:00Z\", \"sessionId\": \"synthetic-session-1\", \"hookCount\": 1, \"hookInfos\": [{\"command\": \"wrap-up.sh\"}], \"hookErrors\": [], \"preventedContinuation\": false, \"hasOutput\": false}\n"
+    },
+    {
+     "path": "blocker",
+     "text": "a regular file\n"
+    }
+   ],
+   "steps": [
+    {
+     "argv": [
+      "--config",
+      "{DIR}/settings.json",
+      "--session",
+      "{DIR}/session.jsonl",
+      "--output",
+      "{DIR}/blocker/report.json",
+      "--report",
+      "{DIR}/report.md"
+     ],
+     "exit": 2,
+     "stderr": "hookdoctor error: an output could not be written\n",
+     "stdout_empty": true
+    }
+   ],
+   "outputs": []
+  },
+  {
+   "name": "the report blocked after the JSON stands",
+   "section": "write_failure",
+   "inputs": [
+    {
+     "path": "settings.json",
+     "text": "{\"hooks\": {\"PreToolUse\": [{\"matcher\": \"Bash\", \"hooks\": [{\"type\": \"command\", \"command\": \"guard-bash.sh\"}]}, {\"matcher\": \"Edit|Write\", \"hooks\": [{\"type\": \"command\", \"command\": \"lint-edit.py\"}]}, {\"matcher\": \"\", \"hooks\": [{\"type\": \"command\", \"command\": \"audit-all.sh\"}]}], \"PostToolUse\": [{\"matcher\": \"Bash\", \"hooks\": [{\"type\": \"command\", \"command\": \"log-bash.sh\"}]}], \"UserPromptSubmit\": [{\"hooks\": [{\"type\": \"command\", \"command\": \"note-prompt.sh\"}]}], \"Stop\": [{\"hooks\": [{\"type\": \"command\", \"command\": \"wrap-up.sh\"}]}]}}"
+    },
+    {
+     "path": "session.jsonl",
+     "text": "{\"type\": \"user\", \"timestamp\": \"2026-01-01T09:00:00Z\", \"sessionId\": \"synthetic-session-1\", \"message\": {\"role\": \"user\", \"content\": \"please run the tests\"}}\n{\"type\": \"assistant\", \"timestamp\": \"2026-01-01T09:00:05Z\", \"sessionId\": \"synthetic-session-1\", \"message\": {\"role\": \"assistant\", \"content\": [{\"type\": \"tool_use\", \"id\": \"call-1\", \"name\": \"Bash\", \"input\": {\"command\": \"synthetic\"}}]}}\n{\"type\": \"user\", \"timestamp\": \"2026-01-01T09:00:07Z\", \"sessionId\": \"synthetic-session-1\", \"message\": {\"role\": \"user\", \"content\": [{\"type\": \"tool_result\", \"tool_use_id\": \"call-1\", \"content\": \"denied by policy\", \"is_error\": true}]}}\n{\"type\": \"system\", \"subtype\": \"stop_hook_summary\", \"timestamp\": \"2026-01-01T09:01:00Z\", \"sessionId\": \"synthetic-session-1\", \"hookCount\": 1, \"hookInfos\": [{\"command\": \"wrap-up.sh\"}], \"hookErrors\": [], \"preventedContinuation\": false, \"hasOutput\": false}\n"
+    },
+    {
+     "path": "blocker",
+     "text": "a regular file\n"
+    }
+   ],
+   "steps": [
+    {
+     "argv": [
+      "--config",
+      "{DIR}/settings.json",
+      "--session",
+      "{DIR}/session.jsonl",
+      "--output",
+      "{DIR}/report.json",
+      "--report",
+      "{DIR}/blocker/report.md"
+     ],
+     "exit": 2,
+     "stderr": "hookdoctor error: an output could not be written\n",
+     "stdout_empty": true
+    }
+   ],
+   "outputs": [
+    {
+     "path": "report.json",
+     "text": "{\n  \"config_source\": \"settings.json\",\n  \"format\": \"hookdoctor-report/1\",\n  \"hooks\": [\n    {\n      \"class\": \"firing\",\n      \"command\": \"guard-bash.sh\",\n      \"event\": \"PreToolUse\",\n      \"evidence\": {\n        \"effects\": {\n          \"consumed_output\": 0,\n          \"denial\": 1,\n          \"modification\": 0\n        },\n        \"first_ran_at\": \"2026-01-01T09:00:05Z\",\n        \"last_ran_at\": \"2026-01-01T09:00:05Z\",\n        \"matched\": 1,\n        \"ran\": 1\n      },\n      \"hook_type\": \"command\",\n      \"id\": \"PreToolUse:0:0\",\n      \"matcher\": \"Bash\"\n    },\n    {\n      \"class\": \"silent\",\n      \"command\": \"lint-edit.py\",\n      \"event\": \"PreToolUse\",\n      \"evidence\": {\n        \"effects\": {\n          \"consumed_output\": 0,\n          \"denial\": 0,\n          \"modification\": 0\n        },\n        \"first_ran_at\": null,\n        \"last_ran_at\": null,\n        \"matched\": 0,\n        \"ran\": 0\n      },\n      \"hook_type\": \"command\",\n      \"id\": \"PreToolUse:1:0\",\n      \"matcher\": \"Edit|Write\"\n    },\n    {\n      \"class\": \"firing\",\n      \"command\": \"audit-all.sh\",\n      \"event\": \"PreToolUse\",\n      \"evidence\": {\n        \"effects\": {\n          \"consumed_output\": 0,\n          \"denial\": 1,\n          \"modification\": 0\n        },\n        \"first_ran_at\": \"2026-01-01T09:00:05Z\",\n        \"last_ran_at\": \"2026-01-01T09:00:05Z\",\n        \"matched\": 1,\n        \"ran\": 1\n      },\n      \"hook_type\": \"command\",\n      \"id\": \"PreToolUse:2:0\",\n      \"matcher\": \"\"\n    },\n    {\n      \"class\": \"firing-without-effect\",\n      \"command\": \"log-bash.sh\",\n      \"event\": \"PostToolUse\",\n      \"evidence\": {\n        \"effects\": {\n          \"consumed_output\": 0,\n          \"denial\": 0,\n          \"modification\": 0\n        },\n        \"first_ran_at\": \"2026-01-01T09:00:07Z\",\n        \"last_ran_at\": \"2026-01-01T09:00:07Z\",\n        \"matched\": 1,\n        \"ran\": 1\n      },\n      \"hook_type\": \"command\",\n      \"id\": \"PostToolUse:0:0\",\n      \"matcher\": \"Bash\"\n    },\n    {\n      \"class\": \"firing-without-effect\",\n      \"command\": \"note-prompt.sh\",\n      \"event\": \"UserPromptSubmit\",\n      \"evidence\": {\n        \"effects\": {\n          \"consumed_output\": 0,\n          \"denial\": 0,\n          \"modification\": 0\n        },\n        \"first_ran_at\": \"2026-01-01T09:00:00Z\",\n        \"last_ran_at\": \"2026-01-01T09:00:00Z\",\n        \"matched\": 1,\n        \"ran\": 1\n      },\n      \"hook_type\": \"command\",\n      \"id\": \"UserPromptSubmit:0:0\",\n      \"matcher\": null\n    },\n    {\n      \"class\": \"firing-without-effect\",\n      \"command\": \"wrap-up.sh\",\n      \"event\": \"Stop\",\n      \"evidence\": {\n        \"effects\": {\n          \"consumed_output\": 0,\n          \"denial\": 0,\n          \"modification\": 0\n        },\n        \"first_ran_at\": \"2026-01-01T09:01:00Z\",\n        \"last_ran_at\": \"2026-01-01T09:01:00Z\",\n        \"matched\": 1,\n        \"ran\": 1\n      },\n      \"hook_type\": \"command\",\n      \"id\": \"Stop:0:0\",\n      \"matcher\": null\n    }\n  ],\n  \"near_misses\": [],\n  \"session_sources\": [\n    \"session.jsonl\"\n  ],\n  \"window\": {\n    \"end\": null,\n    \"start\": null\n  }\n}\n"
+    }
+   ]
+  }
+ ]
+}
