@@ -14,7 +14,7 @@ fn read(rel: &str) -> String {
 fn test_seed_files_present() {
     let readme = read("README.md");
     assert!(readme.contains("# hookdoctor"));
-    assert!(readme.contains("A doctor for hooks"));
+    assert!(readme.contains("It examines the hooks configured in an agent harness"));
     assert!(readme.contains("## Licence"));
     let license = read("LICENSE");
     assert!(license.contains("MIT License"));
