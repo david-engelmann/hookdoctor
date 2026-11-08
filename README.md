@@ -1,6 +1,6 @@
 # hookdoctor
 
-A doctor for hooks, which fire, which never fire, which fire and change nothing, and which are clinically dead, with the examination shown.
+It examines the hooks configured in an agent harness and reports which fire, which stay silent, and which fire without effect, with the examination shown.
 
 ## What this is
 
