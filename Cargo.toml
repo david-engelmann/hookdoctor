@@ -2,7 +2,7 @@
 name = "hookdoctor"
 version = "0.1.0"
 edition = "2021"
-description = "An examination of configured hooks against session execution traces"
+description = "It examines the hooks configured in an agent harness and reports which fire, which stay silent, and which fire without effect, with the examination shown."
 license = "MIT"
 
 [lib]
