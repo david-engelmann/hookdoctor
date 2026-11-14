@@ -14,7 +14,10 @@ pub mod render;
 pub mod report;
 
 pub use errors::{HookdoctorError, ReportValidationError};
-pub use examine::{build_report, validate_report, REPORT_FORMAT};
+pub use examine::{
+    build_evidence, build_report, validate_evidence, validate_report, EVIDENCE_FORMAT,
+    REPORT_FORMAT,
+};
 pub use ingest::{parse_config, parse_session_text, HookConfig, TraceRecord};
 pub use jsonvalue::JsonValue;
 pub use render::render_json;

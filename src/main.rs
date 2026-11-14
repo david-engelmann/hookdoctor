@@ -21,13 +21,13 @@ use std::path::{Path, PathBuf};
 use std::process::ExitCode;
 
 use hookdoctor::errors::HookdoctorError;
-use hookdoctor::examine::{build_report, validate_report};
+use hookdoctor::examine::{build_evidence, build_report, validate_evidence, validate_report};
 use hookdoctor::ingest::{parse_config, parse_session_text, TraceRecord};
 use hookdoctor::reader::{read_file_bytes, read_json_file};
 use hookdoctor::render::render_json;
 use hookdoctor::report::render_markdown;
 
-const USAGE: &str = "usage: hookdoctor --config PATH --session PATH [--session PATH ...] --output PATH --report PATH [--config-label TEXT] [--session-label TEXT ...] [--window-start TIMESTAMP] [--window-end TIMESTAMP]";
+const USAGE: &str = "usage: hookdoctor --config PATH --session PATH [--session PATH ...] --output PATH --report PATH [--config-label TEXT] [--session-label TEXT ...] [--window-start TIMESTAMP] [--window-end TIMESTAMP] [--evidence PATH]";
 
 /// The help text the help flag prints. The usage line stands
 /// once in the shell, in the constant above, and the help text
@@ -81,6 +81,11 @@ const FLAGS: &[FlagSpec] = &[
     },
     FlagSpec {
         name: "window-end",
+        required: false,
+        append: false,
+    },
+    FlagSpec {
+        name: "evidence",
         required: false,
         append: false,
     },
@@ -448,6 +453,24 @@ fn door(values: &Values) -> Result<(), String> {
 
     write_text(&path_of(values, "output"), &render_json(&report))?;
     write_text(&path_of(values, "report"), &render_markdown(&report))?;
+    if let Some(evidence_value) = single(values, "evidence") {
+        let evidence = build_evidence(
+            &hooks,
+            &records,
+            window_start.as_deref(),
+            window_end.as_deref(),
+        )
+        .map_err(refusal)?;
+        validate_evidence(
+            &evidence,
+            &hooks,
+            &records,
+            window_start.as_deref(),
+            window_end.as_deref(),
+        )
+        .map_err(refusal)?;
+        write_text(&PathBuf::from(evidence_value), &render_json(&evidence))?;
+    }
     Ok(())
 }
 
