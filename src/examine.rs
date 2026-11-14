@@ -11,6 +11,7 @@ use crate::reader::parse_output_text;
 use crate::regexlite::{self, is_word_char};
 
 pub const REPORT_FORMAT: &str = "hookdoctor-report/1";
+pub const EVIDENCE_FORMAT: &str = "hookdoctor-evidence/1";
 
 const CLASS_FIRING: &str = "firing";
 const CLASS_SILENT: &str = "silent";
@@ -822,6 +823,115 @@ pub fn validate_report(
     if *report != expected {
         return Err(ReportValidationError::new(
             "the report disagrees with the examination",
+        ));
+    }
+    Ok(true)
+}
+
+/// Build the hookdoctor-evidence/1 document, one verdict per
+/// configured hook in configuration order, carrying the join
+/// keys of HD2-10 and the evidence of the examination. The
+/// verdicts derive from the report entries themselves, so the
+/// two documents can never disagree about a hook.
+pub fn build_evidence(
+    hooks: &[HookConfig],
+    records: &[TraceRecord],
+    window_start: Option<&str>,
+    window_end: Option<&str>,
+) -> Result<JsonValue, HookdoctorError> {
+    let (entries, _near_misses) = examine_hooks(hooks, records, window_start, window_end, &[])?;
+    let verdicts: Vec<JsonValue> = entries
+        .iter()
+        .map(|entry| {
+            let evidence = entry
+                .get("evidence")
+                .expect("the entry carries its evidence");
+            let matcher = match entry.get("matcher") {
+                Some(JsonValue::Text(text)) => JsonValue::text(text.clone()),
+                _ => JsonValue::text(String::new()),
+            };
+            JsonValue::object(vec![
+                (
+                    "event",
+                    entry
+                        .get("event")
+                        .expect("the entry carries its event")
+                        .clone(),
+                ),
+                ("matcher", matcher),
+                (
+                    "command",
+                    entry
+                        .get("command")
+                        .expect("the entry carries its command")
+                        .clone(),
+                ),
+                (
+                    "class",
+                    entry
+                        .get("class")
+                        .expect("the entry carries its class")
+                        .clone(),
+                ),
+                (
+                    "matched",
+                    evidence
+                        .get("matched")
+                        .expect("the evidence carries its matched count")
+                        .clone(),
+                ),
+                (
+                    "ran",
+                    evidence
+                        .get("ran")
+                        .expect("the evidence carries its ran count")
+                        .clone(),
+                ),
+                (
+                    "effects",
+                    evidence
+                        .get("effects")
+                        .expect("the evidence carries its effects")
+                        .clone(),
+                ),
+                (
+                    "first_ran_at",
+                    evidence
+                        .get("first_ran_at")
+                        .expect("the evidence carries its first date")
+                        .clone(),
+                ),
+                (
+                    "last_ran_at",
+                    evidence
+                        .get("last_ran_at")
+                        .expect("the evidence carries its last date")
+                        .clone(),
+                ),
+            ])
+        })
+        .collect();
+    Ok(JsonValue::object(vec![
+        ("format", JsonValue::text(EVIDENCE_FORMAT)),
+        ("verdicts", JsonValue::List(verdicts)),
+    ]))
+}
+
+/// Rebuild the expected evidence document and refuse a
+/// supplied document that differs in any field, in the
+/// standing of the report validation.
+pub fn validate_evidence(
+    evidence: &JsonValue,
+    hooks: &[HookConfig],
+    records: &[TraceRecord],
+    window_start: Option<&str>,
+    window_end: Option<&str>,
+) -> Result<bool, ReportValidationError> {
+    let expected = build_evidence(hooks, records, window_start, window_end)
+        .map_err(|error| ReportValidationError::new(error.message().to_string()))?;
+    if *evidence != expected {
+        return Err(ReportValidationError::new(
+            "the evidence document disagrees with the examination",
         ));
     }
     Ok(true)
