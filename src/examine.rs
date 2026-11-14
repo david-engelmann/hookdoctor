@@ -302,10 +302,12 @@ fn name_form_agrees(hook: &HookConfig, name: &Option<String>) -> Option<bool> {
 }
 
 /// Decide whether a hook run record identifies this hook.
-fn run_agrees(hook: &HookConfig, record: &TraceRecord) -> bool {
-    if record.hook_event.as_deref() != Some(hook.event.as_str()) {
-        return false;
-    }
+/// The identity half of run agreement, the verdicts of the
+/// record's command and of its name form under HD2-3, with
+/// no event standing in the reading. The resolution of
+/// slice 3 reads identification alone, and run agreement
+/// reads it under an event.
+fn run_identifies(hook: &HookConfig, record: &TraceRecord) -> bool {
     let mut verdicts: Vec<bool> = Vec::new();
     if let Some(command) = &record.command {
         if !command.is_empty() {
@@ -316,6 +318,15 @@ fn run_agrees(hook: &HookConfig, record: &TraceRecord) -> bool {
         verdicts.push(verdict);
     }
     !verdicts.is_empty() && verdicts.iter().all(|verdict| *verdict)
+}
+
+/// Run agreement under an event, the event the subject
+/// stands under standing in the place of the event the
+/// record names, which is the same event wherever the
+/// record names one and the resolved event of slice 3
+/// wherever it does not.
+fn run_agrees(hook: &HookConfig, record: &TraceRecord, event: &str) -> bool {
+    event == hook.event && run_identifies(hook, record)
 }
 
 fn levenshtein(left: &str, right: &str) -> usize {
@@ -349,7 +360,26 @@ struct Subject {
     outcome_index: Option<usize>,
 }
 
-fn subjects(records: &[TraceRecord]) -> Vec<Subject> {
+/// The event an eventless run record stands under, resolved
+/// against the configuration under slice 3. The record is
+/// placed where the hooks it identifies all subscribe to
+/// one event, and it stands unplaced where they span two
+/// events or more or identify no hook.
+fn resolved_event(record: &TraceRecord, hooks: &[HookConfig]) -> Option<String> {
+    let mut events: Vec<&str> = Vec::new();
+    for hook in hooks {
+        if run_identifies(hook, record) && !events.contains(&hook.event.as_str()) {
+            events.push(hook.event.as_str());
+        }
+    }
+    if events.len() == 1 {
+        Some(events[0].to_string())
+    } else {
+        None
+    }
+}
+
+fn subjects(records: &[TraceRecord], hooks: &[HookConfig]) -> Vec<Subject> {
     let mut outcome_queues: HashMap<Option<String>, Vec<usize>> = HashMap::new();
     for (index, record) in records.iter().enumerate() {
         if record.kind == "tool_outcome" {
@@ -398,9 +428,13 @@ fn subjects(records: &[TraceRecord]) -> Vec<Subject> {
                 outcome_index: None,
             }),
             "hook_run" => {
-                if let Some(event) = &record.hook_event {
+                let event = match &record.hook_event {
+                    Some(event) => Some(event.clone()),
+                    None => resolved_event(record, hooks),
+                };
+                if let Some(event) = event {
                     built.push(Subject {
-                        event: event.clone(),
+                        event,
                         tool_name: None,
                         record_index: index,
                         outcome_index: None,
@@ -423,7 +457,7 @@ fn subject_matches(
     }
     let record = &records[subject.record_index];
     if record.kind == "hook_run" {
-        return Ok(run_agrees(hook, record));
+        return Ok(run_agrees(hook, record, &subject.event));
     }
     if subject.tool_name.is_none() {
         return Ok(true);
@@ -434,7 +468,7 @@ fn subject_matches(
 fn subject_ran(hook: &HookConfig, subject: &Subject, records: &[TraceRecord]) -> bool {
     let record = &records[subject.record_index];
     if record.kind == "hook_run" {
-        return run_agrees(hook, record);
+        return run_agrees(hook, record, &subject.event);
     }
     if subject.event == "Stop" {
         return record.commands.contains(&hook.command);
@@ -584,7 +618,7 @@ pub fn examine_hooks(
         .filter(|record| in_window(record, start_instant, end_instant))
         .cloned()
         .collect();
-    let subjects = subjects(&windowed);
+    let subjects = subjects(&windowed, hooks);
 
     let source_of = |record: &TraceRecord| -> Option<String> {
         let index = record.file_index;
