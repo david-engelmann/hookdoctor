@@ -27,7 +27,7 @@ use hookdoctor::reader::{read_file_bytes, read_json_file};
 use hookdoctor::render::render_json;
 use hookdoctor::report::render_markdown;
 
-const USAGE: &str = "usage: hookdoctor --config PATH --session PATH [--session PATH ...] --output PATH --report PATH [--config-label TEXT] [--session-label TEXT ...] [--window-start TIMESTAMP] [--window-end TIMESTAMP] [--evidence PATH]";
+const USAGE: &str = "usage: hookdoctor --config PATH --session PATH [--session PATH ...] --output PATH --report PATH [--config-label TEXT] [--session-label TEXT ...] [--window-start TIMESTAMP] [--window-end TIMESTAMP] [--evidence PATH] [--check-evidence PATH]";
 
 /// The help text the help flag prints. The usage line stands
 /// once in the shell, in the constant above, and the help text
@@ -86,6 +86,11 @@ const FLAGS: &[FlagSpec] = &[
     },
     FlagSpec {
         name: "evidence",
+        required: false,
+        append: false,
+    },
+    FlagSpec {
+        name: "check-evidence",
         required: false,
         append: false,
     },
@@ -284,8 +289,24 @@ fn scan(args: &[OsString]) -> Scan {
     if refused_at_end {
         return Scan::UsageError;
     }
+    let checking = values
+        .get("check-evidence")
+        .is_some_and(|standings| !standings.is_empty());
+    if checking {
+        for name in ["output", "report", "evidence"] {
+            if values
+                .get(name)
+                .is_some_and(|standings| !standings.is_empty())
+            {
+                return Scan::UsageError;
+            }
+        }
+    }
     for spec in FLAGS {
         if spec.required {
+            if checking && (spec.name == "output" || spec.name == "report") {
+                continue;
+            }
             match values.get(spec.name) {
                 Some(standings) if !standings.is_empty() => {}
                 _ => return Scan::UsageError,
@@ -431,6 +452,19 @@ fn door(values: &Values) -> Result<(), String> {
 
     let window_start = single(values, "window-start").map(word_text);
     let window_end = single(values, "window-end").map(word_text);
+    if let Some(check_value) = single(values, "check-evidence") {
+        let check_path = PathBuf::from(check_value);
+        let supplied = read_json_file(&check_path, "evidence document").map_err(refusal)?;
+        validate_evidence(
+            &supplied,
+            &hooks,
+            &records,
+            window_start.as_deref(),
+            window_end.as_deref(),
+        )
+        .map_err(refusal)?;
+        return Ok(());
+    }
     let report = build_report(
         &hooks,
         &records,
