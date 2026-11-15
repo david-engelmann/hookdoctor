@@ -30,7 +30,7 @@ use hookdoctor::reader::read_json_document;
 /// the pin a usage refusal step byte compares its standard error
 /// against, so a step the argument reader refused cannot pass on
 /// the tool refusal line standing in its place.
-const USAGE_LINE: &str = "usage: hookdoctor --config PATH --session PATH [--session PATH ...] --output PATH --report PATH [--config-label TEXT] [--session-label TEXT ...] [--window-start TIMESTAMP] [--window-end TIMESTAMP] [--evidence PATH] [--check-evidence PATH]\n";
+const USAGE_LINE: &str = "usage: hookdoctor --config PATH --session PATH [--session PATH ...] --output PATH --report PATH [--config-label TEXT] [--session-label TEXT ...] [--window-start TIMESTAMP] [--window-end TIMESTAMP] [--evidence PATH] [--check-evidence PATH] [--check-report PATH]\n";
 
 fn recordings() -> Vec<JsonValue> {
     let path = concat!(
