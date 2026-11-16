@@ -21,13 +21,15 @@ use std::path::{Path, PathBuf};
 use std::process::ExitCode;
 
 use hookdoctor::errors::HookdoctorError;
-use hookdoctor::examine::{build_evidence, build_report, validate_evidence, validate_report};
+use hookdoctor::examine::{
+    build_evidence, build_report, validate_evidence, validate_markdown, validate_report,
+};
 use hookdoctor::ingest::{parse_config, parse_session_text, TraceRecord};
 use hookdoctor::reader::{read_file_bytes, read_json_file};
 use hookdoctor::render::render_json;
 use hookdoctor::report::render_markdown;
 
-const USAGE: &str = "usage: hookdoctor --config PATH --session PATH [--session PATH ...] --output PATH --report PATH [--config-label TEXT] [--session-label TEXT ...] [--window-start TIMESTAMP] [--window-end TIMESTAMP] [--evidence PATH] [--check-evidence PATH] [--check-report PATH]";
+const USAGE: &str = "usage: hookdoctor --config PATH --session PATH [--session PATH ...] --output PATH --report PATH [--config-label TEXT] [--session-label TEXT ...] [--window-start TIMESTAMP] [--window-end TIMESTAMP] [--evidence PATH] [--check-evidence PATH] [--check-report PATH] [--check-markdown PATH]";
 
 /// The help text the help flag prints. The usage line stands
 /// once in the shell, in the constant above, and the help text
@@ -96,6 +98,11 @@ const FLAGS: &[FlagSpec] = &[
     },
     FlagSpec {
         name: "check-report",
+        required: false,
+        append: false,
+    },
+    FlagSpec {
+        name: "check-markdown",
         required: false,
         append: false,
     },
@@ -300,10 +307,17 @@ fn scan(args: &[OsString]) -> Scan {
     let checking_report = values
         .get("check-report")
         .is_some_and(|standings| !standings.is_empty());
-    if checking_evidence && checking_report {
+    let checking_markdown = values
+        .get("check-markdown")
+        .is_some_and(|standings| !standings.is_empty());
+    let checks_standing = [checking_evidence, checking_report, checking_markdown]
+        .iter()
+        .filter(|standing| **standing)
+        .count();
+    if checks_standing > 1 {
         return Scan::UsageError;
     }
-    let checking = checking_evidence || checking_report;
+    let checking = checking_evidence || checking_report || checking_markdown;
     if checking {
         for name in ["output", "report", "evidence"] {
             if values
@@ -481,6 +495,21 @@ fn door(values: &Values) -> Result<(), String> {
         let check_path = PathBuf::from(check_value);
         let supplied = read_json_file(&check_path, "report").map_err(refusal)?;
         validate_report(
+            &supplied,
+            &hooks,
+            &records,
+            &config_source,
+            &session_sources,
+            window_start.as_deref(),
+            window_end.as_deref(),
+        )
+        .map_err(refusal)?;
+        return Ok(());
+    }
+    if let Some(check_value) = single(values, "check-markdown") {
+        let check_path = PathBuf::from(check_value);
+        let supplied = read_file_bytes(&check_path, "markdown report").map_err(refusal)?;
+        validate_markdown(
             &supplied,
             &hooks,
             &records,

@@ -828,6 +828,39 @@ pub fn validate_report(
     Ok(true)
 }
 
+/// Validate a supplied markdown report against the markdown
+/// the examination renders from the same inputs. The
+/// comparison stands over the bytes themselves, because a
+/// markdown report is its rendering and a respelling of it
+/// is a different document, where the two JSON validations
+/// compare values with the spelling standing outside them.
+pub fn validate_markdown(
+    supplied: &[u8],
+    hooks: &[HookConfig],
+    records: &[TraceRecord],
+    config_source: &str,
+    session_sources: &[String],
+    window_start: Option<&str>,
+    window_end: Option<&str>,
+) -> Result<bool, ReportValidationError> {
+    let expected = build_report(
+        hooks,
+        records,
+        config_source,
+        session_sources,
+        window_start,
+        window_end,
+    )
+    .map_err(|error| ReportValidationError::new(error.message().to_string()))?;
+    let rendered = crate::report::render_markdown(&expected);
+    if supplied != rendered.as_bytes() {
+        return Err(ReportValidationError::new(
+            "the markdown report disagrees with the examination",
+        ));
+    }
+    Ok(true)
+}
+
 /// Build the hookdoctor-evidence/1 document, one verdict per
 /// configured hook in configuration order, carrying the join
 /// keys of HD2-10 and the evidence of the examination. The
