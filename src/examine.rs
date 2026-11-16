@@ -755,6 +755,92 @@ pub fn examine_hooks(
     Ok((entries, near_misses))
 }
 
+/// Collect the unconfigured runs of the windowed records,
+/// the traces of hooks running that the configuration does
+/// not declare, under UR-2. A hook run record stands when it
+/// names an event and carries an identifier and neither its
+/// command nor its name form identifies any configured hook,
+/// the identification reading of HD2-3 standing event free as
+/// it stands in run identification itself. A stop record
+/// stands one entry for each command it names that no
+/// configured Stop hook carries. The entries stand in the
+/// order the records stand in the traces.
+pub fn unconfigured_runs(
+    hooks: &[HookConfig],
+    records: &[TraceRecord],
+    window_start: Option<&str>,
+    window_end: Option<&str>,
+    session_sources: &[String],
+) -> Result<Vec<JsonValue>, HookdoctorError> {
+    let start_instant = window_bound(window_start, "start")?;
+    let end_instant = window_bound(window_end, "end")?;
+    let source_of = |record: &TraceRecord| -> Option<String> {
+        let index = record.file_index;
+        if index >= 0 && (index as usize) < session_sources.len() {
+            Some(session_sources[index as usize].clone())
+        } else {
+            record.session.clone()
+        }
+    };
+    let mut runs: Vec<JsonValue> = Vec::new();
+    for record in records
+        .iter()
+        .filter(|record| in_window(record, start_instant, end_instant))
+    {
+        if record.kind == "hook_run" {
+            let Some(event) = &record.hook_event else {
+                continue;
+            };
+            let has_command = record
+                .command
+                .as_deref()
+                .is_some_and(|command| !command.is_empty());
+            let has_name = record
+                .hook_name
+                .as_deref()
+                .is_some_and(|name| !name.is_empty());
+            if !has_command && !has_name {
+                continue;
+            }
+            let identified = hooks.iter().any(|hook| {
+                (has_command && record.command.as_deref() == Some(hook.command.as_str()))
+                    || name_form_agrees(hook, &record.hook_name) == Some(true)
+            });
+            if identified {
+                continue;
+            }
+            runs.push(JsonValue::object(vec![
+                ("event", JsonValue::text(event.clone())),
+                ("kind", JsonValue::text("hook_run")),
+                ("command", JsonValue::optional_text(&record.command)),
+                ("name", JsonValue::optional_text(&record.hook_name)),
+                ("timestamp", JsonValue::optional_text(&record.timestamp)),
+                ("source", JsonValue::optional_text(&source_of(record))),
+                ("line", JsonValue::Int(record.line)),
+            ]));
+        } else if record.kind == "stop" {
+            for command in &record.commands {
+                let configured = hooks
+                    .iter()
+                    .any(|hook| hook.event == "Stop" && hook.command == *command);
+                if configured {
+                    continue;
+                }
+                runs.push(JsonValue::object(vec![
+                    ("event", JsonValue::text("Stop")),
+                    ("kind", JsonValue::text("stop")),
+                    ("command", JsonValue::text(command.clone())),
+                    ("name", JsonValue::optional_text(&None)),
+                    ("timestamp", JsonValue::optional_text(&record.timestamp)),
+                    ("source", JsonValue::optional_text(&source_of(record))),
+                    ("line", JsonValue::Int(record.line)),
+                ]));
+            }
+        }
+    }
+    Ok(runs)
+}
+
 /// Build the hookdoctor-report/1 document.
 ///
 /// Mirrors `build_report` in the Python examination module.
@@ -768,7 +854,31 @@ pub fn build_report(
 ) -> Result<JsonValue, HookdoctorError> {
     let (entries, near_misses) =
         examine_hooks(hooks, records, window_start, window_end, session_sources)?;
-    Ok(JsonValue::object(vec![
+    let unconfigured =
+        unconfigured_runs(hooks, records, window_start, window_end, session_sources)?;
+    let mut fields = report_fields(
+        entries,
+        near_misses,
+        config_source,
+        session_sources,
+        window_start,
+        window_end,
+    );
+    if !unconfigured.is_empty() {
+        fields.push(("unconfigured_runs", JsonValue::List(unconfigured)));
+    }
+    Ok(JsonValue::object(fields))
+}
+
+fn report_fields(
+    entries: Vec<JsonValue>,
+    near_misses: Vec<JsonValue>,
+    config_source: &str,
+    session_sources: &[String],
+    window_start: Option<&str>,
+    window_end: Option<&str>,
+) -> Vec<(&'static str, JsonValue)> {
+    vec![
         ("format", JsonValue::text(REPORT_FORMAT)),
         ("config_source", JsonValue::text(config_source)),
         (
@@ -795,7 +905,7 @@ pub fn build_report(
         ),
         ("hooks", JsonValue::List(entries)),
         ("near_misses", JsonValue::List(near_misses)),
-    ]))
+    ]
 }
 
 /// Rebuild the expected report and refuse a supplied report that

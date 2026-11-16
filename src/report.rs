@@ -135,6 +135,28 @@ pub fn render_markdown(report: &JsonValue) -> String {
     if !near_misses.is_empty() {
         lines.push(String::new());
     }
+    let unconfigured = match report.get("unconfigured_runs") {
+        Some(JsonValue::List(items)) => items.clone(),
+        _ => Vec::new(),
+    };
+    if !unconfigured.is_empty() {
+        lines.push("## Unconfigured runs".to_string());
+        lines.push(String::new());
+        for run in &unconfigured {
+            let identity = match run.get("command") {
+                Some(JsonValue::Text(command)) => command.clone(),
+                _ => fstring(run.get("name")),
+            };
+            lines.push(format!(
+                "- {} ran at {} in {} on line {}.",
+                identity,
+                fstring(run.get("event")),
+                fstring(run.get("source")),
+                int_of(run.get("line")),
+            ));
+        }
+        lines.push(String::new());
+    }
     let mut text = lines.join("\n");
     while text.ends_with('\n') {
         text.pop();
