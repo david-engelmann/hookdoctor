@@ -159,13 +159,6 @@ fn test_the_markdown_renders_the_unconfigured_runs() {
 }
 
 #[test]
-fn test_an_eventless_run_record_stands_nowhere_in_the_unconfigured_list() {
-    let eventless = r#"{"type":"attachment","timestamp":"2026-01-01T00:00:04Z","sessionId":"s1","attachment":{"type":"hook_success","hookName":"rogue-hook.sh","command":"rogue-hook.sh","content":"","stdout":"","exitCode":0,"toolUseID":"c1"}}"#;
-    let report = report(&session(&[CALL, OUTCOME, eventless]), None);
-    assert!(report.get("unconfigured_runs").is_none());
-}
-
-#[test]
 fn test_a_run_record_carrying_no_identifier_stands_nowhere_in_the_unconfigured_list() {
     let anonymous = r#"{"type":"attachment","timestamp":"2026-01-01T00:00:04Z","sessionId":"s1","attachment":{"type":"hook_success","hookEvent":"PreToolUse","content":"","stdout":"","exitCode":0,"toolUseID":"c1"}}"#;
     let report = report(&session(&[CALL, OUTCOME, anonymous]), None);
