@@ -97,7 +97,7 @@ fn evidence(entry: &JsonValue, field: &str) -> i64 {
 fn test_an_empty_event_field_reads_as_no_event_field_and_the_hook_fires() {
     let report = report_with(MATCHERLESS_SETTINGS, &session(&[EMPTY_FIELD_RECORD]), None);
     let hook = hook_entry(&report, "guard.sh");
-    assert_eq!(class_of(&hook), "firing without effect");
+    assert_eq!(class_of(&hook), "firing-without-effect");
     assert_eq!(evidence(&hook, "matched"), 1);
     assert_eq!(evidence(&hook, "ran"), 1);
     assert!(
@@ -110,7 +110,7 @@ fn test_an_empty_event_field_reads_as_no_event_field_and_the_hook_fires() {
 fn test_an_empty_event_field_lets_the_name_derivation_run() {
     let report = report(&session(&[EMPTY_FIELD_COLON_NAME]), None);
     let hook = hook_entry(&report, "guard.sh");
-    assert_eq!(class_of(&hook), "firing without effect");
+    assert_eq!(class_of(&hook), "firing-without-effect");
     assert_eq!(evidence(&hook, "matched"), 1);
     assert_eq!(evidence(&hook, "ran"), 1);
     assert!(
@@ -265,7 +265,7 @@ fn test_an_empty_event_field_disagreeing_record_stands_nowhere() {
 fn test_a_hook_under_an_empty_event_key_still_counts_for_its_record() {
     let report = report_with(EMPTY_KEY_SETTINGS, &session(&[EMPTY_KEY_RECORD]), None);
     let hook = hook_entry(&report, "empty.sh");
-    assert_eq!(class_of(&hook), "firing without effect");
+    assert_eq!(class_of(&hook), "firing-without-effect");
     assert_eq!(evidence(&hook, "matched"), 1);
     assert_eq!(evidence(&hook, "ran"), 1);
 }
@@ -274,7 +274,7 @@ fn test_a_hook_under_an_empty_event_key_still_counts_for_its_record() {
 fn test_a_non_text_event_field_still_derives_from_the_name() {
     let report = report(&session(&[NUMERIC_FIELD_RECORD]), None);
     let hook = hook_entry(&report, "guard.sh");
-    assert_eq!(class_of(&hook), "firing without effect");
+    assert_eq!(class_of(&hook), "firing-without-effect");
     assert_eq!(evidence(&hook, "matched"), 1);
     assert_eq!(evidence(&hook, "ran"), 1);
 }
