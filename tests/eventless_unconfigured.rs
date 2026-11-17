@@ -94,8 +94,8 @@ fn test_an_eventless_unconfigured_run_and_an_evented_one_stand_in_trace_order() 
     assert_eq!(runs[0].get("line"), Some(&JsonValue::Int(3)));
     assert_eq!(runs[1].get("event"), Some(&JsonValue::text("PreToolUse")));
     assert_eq!(runs[1].get("line"), Some(&JsonValue::Int(4)));
-    let report = report(&session(&[CALL, OUTCOME, ROGUE_RUN, EVENTLESS_ROGUE]), None);
-    let Some(JsonValue::List(runs)) = report.get("unconfigured_runs") else {
+    let second = report(&session(&[CALL, OUTCOME, ROGUE_RUN, EVENTLESS_ROGUE]), None);
+    let Some(JsonValue::List(runs)) = second.get("unconfigured_runs") else {
         panic!("the member stands");
     };
     assert_eq!(runs.len(), 2);
