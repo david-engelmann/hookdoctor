@@ -85,8 +85,8 @@ fn test_an_eventless_record_naming_a_bare_event_word_stands_in_the_report_by_its
 
 #[test]
 fn test_an_eventless_unconfigured_run_and_an_evented_one_stand_in_trace_order() {
-    let report = report(&session(&[CALL, OUTCOME, EVENTLESS_ROGUE, ROGUE_RUN]), None);
-    let Some(JsonValue::List(runs)) = report.get("unconfigured_runs") else {
+    let first = report(&session(&[CALL, OUTCOME, EVENTLESS_ROGUE, ROGUE_RUN]), None);
+    let Some(JsonValue::List(runs)) = first.get("unconfigured_runs") else {
         panic!("the member stands");
     };
     assert_eq!(runs.len(), 2);
