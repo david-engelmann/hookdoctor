@@ -757,16 +757,17 @@ pub fn examine_hooks(
 
 /// Collect the unconfigured runs of the windowed records,
 /// the traces of hooks running that the configuration does
-/// not declare, under UR-2 as slice 9 widens it. A hook run
-/// record stands when it carries an identifier and neither
-/// its command nor its name form identifies any configured
-/// hook, whether it names an event or names none, an
-/// eventless record standing with the event of its entry
-/// as null, the identification reading of HD2-3 standing
-/// event free as it stands in run identification itself.
-/// A stop record stands one entry for each command it
-/// names that no configured Stop hook carries. The entries
-/// stand in the order the records stand in the traces.
+/// not declare, under UR-2 as slices 9 and 10 widen it. A
+/// hook run record stands when it carries an identifier
+/// and identifies no configured hook under the joint
+/// reading of HD2-3, read as the resolution reads it, and
+/// its two identifiers do not each identify a configured
+/// hook of their own, whether it names an event or names
+/// none, an eventless record standing with the event of
+/// its entry as null. A stop record stands one entry for
+/// each command it names that no configured Stop hook
+/// carries. The entries stand in the order the records
+/// stand in the traces.
 pub fn unconfigured_runs(
     hooks: &[HookConfig],
     records: &[TraceRecord],
@@ -801,11 +802,15 @@ pub fn unconfigured_runs(
             if !has_command && !has_name {
                 continue;
             }
-            let identified = hooks.iter().any(|hook| {
-                (has_command && record.command.as_deref() == Some(hook.command.as_str()))
-                    || name_form_agrees(hook, &record.hook_name) == Some(true)
-            });
-            if identified {
+            let jointly_identified = hooks.iter().any(|hook| run_identifies(hook, record));
+            let command_identifies = has_command
+                && hooks
+                    .iter()
+                    .any(|hook| record.command.as_deref() == Some(hook.command.as_str()));
+            let name_identifies = hooks
+                .iter()
+                .any(|hook| name_form_agrees(hook, &record.hook_name) == Some(true));
+            if jointly_identified || (command_identifies && name_identifies) {
                 continue;
             }
             runs.push(JsonValue::object(vec![
