@@ -417,10 +417,16 @@ pub fn parse_session_text(
                 let attachment = attachment.expect("attachment object stands");
                 let hook_name = text_field(attachment.get("hookName"));
                 let mut hook_event = text_field(attachment.get("hookEvent"));
+                if hook_event.as_deref() == Some("") {
+                    hook_event = None;
+                }
                 if hook_event.is_none() {
                     if let Some(name) = &hook_name {
                         if !name.is_empty() && name.contains(':') {
-                            hook_event = Some(name.split(':').next().unwrap_or("").to_string());
+                            let derived = name.split(':').next().unwrap_or("");
+                            if !derived.is_empty() {
+                                hook_event = Some(derived.to_string());
+                            }
                         }
                     }
                 }
