@@ -148,6 +148,10 @@ fn test_the_header_lines_spell_every_kind_through_the_value_spelling() {
     );
     assert!(list_page.contains("Format [\n  1,\n  2\n]"), "{list_page}");
     assert!(
+        list_page.contains("Format [\n  1,\n  2\n]\n\nConfiguration source probe"),
+        "{list_page}"
+    );
+    assert!(
         !list_page.contains("Format [1, 2]"),
         "a container at a header field takes the JSON rendering whole, so the one line repr stands nowhere at the Format line: {list_page}"
     );
@@ -160,6 +164,10 @@ fn test_the_header_lines_spell_every_kind_through_the_value_spelling() {
     let source_page = page_with("config_source", JsonValue::List(vec![JsonValue::Int(1)]));
     assert!(
         source_page.contains("Configuration source [\n  1\n]"),
+        "{source_page}"
+    );
+    assert!(
+        source_page.contains("Configuration source [\n  1\n]\n\nSession sources a.jsonl"),
         "{source_page}"
     );
     let window = JsonValue::object(vec![
@@ -417,4 +425,19 @@ fn test_the_unconfigured_runs_line_spells_its_event_and_source_and_reads_its_lin
         !page.contains("on line 2.5."),
         "the line field of the runs line reads through the count reading, so the float standing stands nowhere as itself: {page}"
     );
+}
+
+#[test]
+fn test_the_hooks_counts_at_the_matched_seat_read_a_fitting_big_integer_and_a_container_as_zero_and_the_boundary_integers_as_themselves(
+) {
+    let matched = |value: JsonValue| entry_page(evidence_entry("matched", Some(value)));
+    let fitting = JsonValue::BigInt("42".to_string());
+    assert!(matched(fitting).contains("Matched 0"));
+    let list = JsonValue::List(vec![JsonValue::Int(1)]);
+    assert!(matched(list).contains("Matched 0"));
+    let object = JsonValue::object(vec![("a", JsonValue::Int(1))]);
+    assert!(matched(object).contains("Matched 0"));
+    assert!(matched(JsonValue::Int(-3)).contains("Matched -3"));
+    assert!(matched(JsonValue::Int(i64::MIN)).contains("Matched -9223372036854775808"));
+    assert!(matched(JsonValue::Int(i64::MAX)).contains("Matched 9223372036854775807"));
 }
