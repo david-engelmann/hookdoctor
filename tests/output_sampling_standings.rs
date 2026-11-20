@@ -105,6 +105,10 @@ fn test_the_output_of_a_run_record_stands_read_from_its_two_texts_each_sampled_o
         ),
         (1, 0, 1)
     );
+    assert_eq!(
+        effects_of("hook_success", "{}", "{\"updatedInput\": null}"),
+        (0, 1, 1)
+    );
 }
 
 #[test]
@@ -157,6 +161,14 @@ fn test_at_each_sampled_object_the_effect_fields_stand_read_at_two_candidates_th
             "{\"permissionDecision\": \"deny\", \"hookSpecificOutput\": {\"decision\": \"allow\"}}"
         ),
         (1, 0, 0)
+    );
+    assert_eq!(
+        effects_of(
+            "hook_success",
+            "",
+            "{\"hookSpecificOutput\": {\"hookSpecificOutput\": {\"decision\": \"block\"}}}"
+        ),
+        (0, 0, 0)
     );
 }
 
@@ -294,6 +306,22 @@ fn test_additional_context_standing_as_nonempty_text_at_either_candidate_makes_c
             "hook_non_blocking_error",
             "",
             "{\"hookSpecificOutput\": {\"additionalContext\": \"ctx\"}}"
+        ),
+        (0, 0, 0)
+    );
+    assert_eq!(
+        effects_of(
+            "hook_success",
+            "",
+            "{\"hookSpecificOutput\": {\"additionalContext\": \"\"}}"
+        ),
+        (0, 0, 0)
+    );
+    assert_eq!(
+        effects_of(
+            "hook_success",
+            "",
+            "{\"hookSpecificOutput\": {\"additionalContext\": 7}}"
         ),
         (0, 0, 0)
     );
