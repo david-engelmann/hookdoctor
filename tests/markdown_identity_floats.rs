@@ -125,3 +125,17 @@ fn test_a_minus_infinity_name_beside_a_null_command_prints_minus_inf_in_the_mark
         "the encoder word for the value stands nowhere on the markdown surface {page}"
     );
 }
+
+#[test]
+fn test_a_float_name_beside_a_number_command_prints_its_spelling_in_the_markdown() {
+    let page = rendered(float_entry(Some(JsonValue::Int(7)), JsonValue::Float(1.5)));
+    assert!(page.contains("## Unconfigured runs"), "{page}");
+    assert!(
+        page.contains("- 1.5 ran at None in session.jsonl on line 3."),
+        "{page}"
+    );
+    assert!(
+        !page.contains("- 7 ran at"),
+        "the command standing in another kind falls through, so its digits stand nowhere in the identity place {page}"
+    );
+}
