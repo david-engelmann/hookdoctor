@@ -95,6 +95,26 @@ pub fn json_float_text(value: f64) -> String {
     }
 }
 
+/// Spell a float the way a Python f-string spells it.
+///
+/// The two spellings agree on every finite value, so a finite
+/// value stands exactly as the JSON encoder spelling lays it
+/// out, and the three non-finite values take the lowercase
+/// words of the f-string.
+pub fn markdown_float_text(value: f64) -> String {
+    if value.is_nan() {
+        return "nan".to_string();
+    }
+    if value.is_infinite() {
+        return if value < 0.0 {
+            "-inf".to_string()
+        } else {
+            "inf".to_string()
+        };
+    }
+    json_float_text(value)
+}
+
 fn write_value(value: &JsonValue, indent: usize, out: &mut String) {
     match value {
         JsonValue::Null => out.push_str("null"),

@@ -19,7 +19,7 @@ fn fstring(value: Option<&JsonValue>) -> String {
         }
         Some(JsonValue::Int(integer)) => integer.to_string(),
         Some(JsonValue::BigInt(text)) => text.clone(),
-        Some(JsonValue::Float(number)) => crate::render::json_float_text(*number),
+        Some(JsonValue::Float(number)) => crate::render::markdown_float_text(*number),
         Some(other) => crate::render::render_json(other),
     }
 }
