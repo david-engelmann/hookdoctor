@@ -266,6 +266,16 @@ fn test_an_assistant_line_yields_one_tool_call_record_for_each_block_whose_name_
     );
     let record = only(&records);
     assert_eq!(record.kind, "other");
+    let records = read_session(
+        "{\"type\": \"assistant\", \"message\": {\"content\": [{\"type\": \"tool_use\", \"name\": \"Bash\", \"id\": \"c1\"}, {\"type\": \"tool_use\", \"name\": \"Edit\", \"id\": \"c2\"}]}}",
+    );
+    assert_eq!(records.len(), 2);
+    assert_eq!(records[0].kind, "tool_call");
+    assert_eq!(records[0].tool_name.as_deref(), Some("Bash"));
+    assert_eq!(records[0].call_id.as_deref(), Some("c1"));
+    assert_eq!(records[1].kind, "tool_call");
+    assert_eq!(records[1].tool_name.as_deref(), Some("Edit"));
+    assert_eq!(records[1].call_id.as_deref(), Some("c2"));
 }
 
 #[test]
@@ -303,6 +313,18 @@ fn test_a_user_line_yields_its_outcome_records_in_block_order_and_one_prompt_rec
     for record in &records {
         assert_eq!(record.kind, "other");
     }
+    let records = read_session(
+        "{\"type\": \"user\", \"message\": {\"content\": [{\"type\": \"tool_result\", \"tool_use_id\": \"c1\", \"content\": \"one\"}, {\"type\": \"tool_result\", \"tool_use_id\": \"c2\", \"content\": \"two\"}, {\"type\": \"text\", \"text\": \"prompt\"}]}}",
+    );
+    assert_eq!(records.len(), 3);
+    assert_eq!(records[0].kind, "tool_outcome");
+    assert_eq!(records[0].call_id.as_deref(), Some("c1"));
+    assert_eq!(records[0].text, "one");
+    assert_eq!(records[1].kind, "tool_outcome");
+    assert_eq!(records[1].call_id.as_deref(), Some("c2"));
+    assert_eq!(records[1].text, "two");
+    assert_eq!(records[2].kind, "prompt");
+    assert_eq!(records[2].text, "prompt");
 }
 
 #[test]
@@ -362,6 +384,37 @@ fn test_the_truthiness_reading_governs_the_error_flag_of_an_outcome_and_the_prev
     let record = only(&records);
     assert_eq!(record.prevented_continuation, false);
     assert_eq!(record.has_output, true);
+    let matrix: [(&str, bool); 12] = [
+        ("\"false\"", true),
+        ("0", false),
+        ("\"\"", false),
+        ("[]", false),
+        ("[0]", true),
+        ("{}", false),
+        ("{\"a\": 1}", true),
+        ("null", false),
+        ("0.0", false),
+        ("2.5", true),
+        ("true", true),
+        ("false", false),
+    ];
+    for (value, expected) in matrix {
+        let records = read_session(&format!(
+            "{{\"type\": \"system\", \"subtype\": \"stop_hook_summary\", \"hookInfos\": [], \"preventedContinuation\": {value}}}"
+        ));
+        let record = only(&records);
+        assert_eq!(record.prevented_continuation, expected, "prevented {value}");
+        assert_eq!(record.has_output, false, "prevented seat {value}");
+        let records = read_session(&format!(
+            "{{\"type\": \"system\", \"subtype\": \"stop_hook_summary\", \"hookInfos\": [], \"hasOutput\": {value}}}"
+        ));
+        let record = only(&records);
+        assert_eq!(record.has_output, expected, "hasOutput {value}");
+        assert_eq!(
+            record.prevented_continuation, false,
+            "hasOutput seat {value}"
+        );
+    }
 }
 
 #[test]
@@ -481,4 +534,26 @@ fn test_the_hook_event_of_a_run_record_stands_as_its_event_field_where_one_stand
         event("{\"type\": \"attachment\", \"attachment\": {\"type\": \"hook_success\"}}"),
         None
     );
+}
+
+#[test]
+fn test_an_assistant_block_whose_type_does_not_stand_as_the_text_tool_use_yields_no_tool_call_record_however_its_name_and_identifier_stand(
+) {
+    let records = read_session(
+        "{\"type\": \"assistant\", \"message\": {\"content\": [{\"type\": \"text\", \"name\": \"Bash\", \"id\": \"c1\"}]}}",
+    );
+    let record = only(&records);
+    assert_eq!(record.kind, "other");
+    let records = read_session(
+        "{\"type\": \"assistant\", \"message\": {\"content\": [{\"type\": 7, \"name\": \"Bash\", \"id\": \"c1\"}]}}",
+    );
+    let record = only(&records);
+    assert_eq!(record.kind, "other");
+    let records = read_session(
+        "{\"type\": \"assistant\", \"message\": {\"content\": [{\"type\": \"text\", \"name\": \"Bash\", \"id\": \"c1\"}, {\"type\": \"tool_use\", \"name\": \"Edit\", \"id\": \"c2\"}]}}",
+    );
+    let record = only(&records);
+    assert_eq!(record.kind, "tool_call");
+    assert_eq!(record.tool_name.as_deref(), Some("Edit"));
+    assert_eq!(record.call_id.as_deref(), Some("c2"));
 }
