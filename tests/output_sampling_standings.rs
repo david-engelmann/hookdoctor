@@ -166,7 +166,7 @@ fn test_at_each_sampled_object_the_effect_fields_stand_read_at_two_candidates_th
         effects_of(
             "hook_success",
             "",
-            "{\"hookSpecificOutput\": {\"hookSpecificOutput\": {\"decision\": \"block\"}}}}"
+            "{\"hookSpecificOutput\": {\"hookSpecificOutput\": {\"decision\": \"block\"}}}"
         ),
         (0, 0, 0)
     );
