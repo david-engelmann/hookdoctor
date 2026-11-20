@@ -508,3 +508,319 @@ fn test_a_file_name_carrying_a_non_utf8_byte_is_read() {
     );
     std::fs::remove_dir_all(&dir).expect("a pin directory clears");
 }
+
+/// The argument reading helpers of the pins of slice 19. The
+/// recorded synthetic configuration and session stand in the
+/// pin directory, and each run drives the binary there over
+/// the argument words it is given, so a pin varies one seat of
+/// an invocation at a time and reads the answer at that seat.
+fn ar_dir(name: &str) -> PathBuf {
+    let dir = pin_dir(name);
+    let settings = recorded_input(
+        "deterministic outputs over the examples",
+        "synthetic-settings.json",
+    );
+    let session = recorded_input(
+        "deterministic outputs over the examples",
+        "synthetic-session.jsonl",
+    );
+    std::fs::write(dir.join("settings.json"), settings.as_bytes())
+        .expect("the configuration stands");
+    std::fs::write(dir.join("session.jsonl"), session.as_bytes()).expect("the session stands");
+    dir
+}
+
+fn ar_run(dir: &Path, args: &[&str]) -> std::process::Output {
+    Command::new(env!("CARGO_BIN_EXE_hookdoctor"))
+        .args(args)
+        .current_dir(dir)
+        .output()
+        .expect("the binary runs")
+}
+
+fn ar_path(dir: &Path, name: &str) -> String {
+    dir.join(name)
+        .to_str()
+        .expect("a pin directory path is text")
+        .to_string()
+}
+
+fn ar_answers_help(output: &std::process::Output) {
+    assert_eq!(
+        output.status.code(),
+        Some(0),
+        "the help answers with exit code 0"
+    );
+    assert!(
+        !output.stdout.is_empty(),
+        "the help answers on standard output"
+    );
+    assert!(
+        output.stderr.is_empty(),
+        "the help writes nothing to standard error"
+    );
+}
+
+fn ar_refuses_usage(output: &std::process::Output) {
+    assert_eq!(
+        output.status.code(),
+        Some(2),
+        "a usage refusal exits with code 2"
+    );
+    assert_eq!(
+        output.stderr,
+        USAGE_LINE.as_bytes(),
+        "a usage refusal writes the usage line to standard error"
+    );
+    assert!(
+        output.stdout.is_empty(),
+        "a usage refusal writes nothing to standard output"
+    );
+}
+
+fn ar_refuses_tool(output: &std::process::Output, wording: &str) {
+    assert_eq!(
+        output.status.code(),
+        Some(2),
+        "a tool refusal exits with code 2"
+    );
+    let stderr = String::from_utf8(output.stderr.clone()).expect("standard error is text");
+    assert_eq!(
+        stderr, wording,
+        "the seat the reading reached speaks its own refusal"
+    );
+    assert!(
+        output.stdout.is_empty(),
+        "a tool refusal writes nothing to standard output"
+    );
+}
+
+/// The negative number pin of obligation AR-2. A token that
+/// spells a negative number reads as the value at the seat of
+/// a value taking flag, so the call passes the argument
+/// reading whole and refuses at the reading the value names,
+/// at a path flag seat in the tool refusal of the file that
+/// does not stand and at the window flag seat in the window
+/// refusal, and the digit reading the token matches under is
+/// the runtime its own, running wider than the plain digits.
+#[test]
+fn test_a_negative_number_token_reads_as_the_value_at_the_seats_of_a_path_flag_and_of_the_window_flag(
+) {
+    let dir = ar_dir("hookdoctor-cli-ar-negative-number");
+    let _scratch = ScratchDir::hold(&dir);
+    let settings = ar_path(&dir, "settings.json");
+    let session = ar_path(&dir, "session.jsonl");
+    let output = ar_path(&dir, "report.json");
+    let report = ar_path(&dir, "report.md");
+    for token in ["-5", "-5.5", "-.5", "-00.5", "-٥", "-５"] {
+        let run = ar_run(
+            &dir,
+            &[
+                "--config",
+                token,
+                "--session",
+                &session,
+                "--output",
+                &output,
+                "--report",
+                &report,
+            ],
+        );
+        ar_refuses_tool(
+            &run,
+            "hookdoctor error: the configuration could not be read\n",
+        );
+    }
+    let run = ar_run(
+        &dir,
+        &[
+            "--config",
+            &settings,
+            "--session",
+            "-5",
+            "--output",
+            &output,
+            "--report",
+            &report,
+        ],
+    );
+    ar_refuses_tool(
+        &run,
+        "hookdoctor error: the session file could not be read\n",
+    );
+    let run = ar_run(
+        &dir,
+        &[
+            "--config",
+            &settings,
+            "--session",
+            &session,
+            "--output",
+            &output,
+            "--report",
+            &report,
+            "--window-start",
+            "-5",
+        ],
+    );
+    ar_refuses_tool(
+        &run,
+        "hookdoctor error: the window start is not a timestamp\n",
+    );
+    std::fs::remove_dir_all(&dir).expect("a pin directory clears");
+}
+
+/// The option string boundary pin of obligation AR-2. The
+/// value seat of a flag reads the next token through the
+/// option string reading alone, so the shapes that stand
+/// outside the negative number reading refuse there as a
+/// flag standing without its value, and a help spelling
+/// refuses there too and never answers, while a token
+/// carrying a space and a lone dash read as values, and a
+/// token that does not stand as UTF-8 text reads as no
+/// number and so as an option string.
+#[cfg(unix)]
+#[test]
+fn test_a_value_seat_reads_through_the_option_string_reading_alone_so_the_shapes_outside_the_number_reading_and_a_help_spelling_refuse_there_while_a_space_and_a_lone_dash_read_as_values_and_a_token_that_is_not_text_reads_as_no_number(
+) {
+    use std::ffi::OsString;
+    use std::os::unix::ffi::OsStringExt;
+
+    let dir = ar_dir("hookdoctor-cli-ar-option-string");
+    let _scratch = ScratchDir::hold(&dir);
+    let session = ar_path(&dir, "session.jsonl");
+    let output = ar_path(&dir, "report.json");
+    let report = ar_path(&dir, "report.md");
+    for token in ["-5.", "-5e3", "-5x", "-h", "-hx"] {
+        let run = ar_run(
+            &dir,
+            &[
+                "--config",
+                token,
+                "--session",
+                &session,
+                "--output",
+                &output,
+                "--report",
+                &report,
+            ],
+        );
+        ar_refuses_usage(&run);
+    }
+    for token in ["-x y", "-"] {
+        let run = ar_run(
+            &dir,
+            &[
+                "--config",
+                token,
+                "--session",
+                &session,
+                "--output",
+                &output,
+                "--report",
+                &report,
+            ],
+        );
+        ar_refuses_tool(
+            &run,
+            "hookdoctor error: the configuration could not be read\n",
+        );
+    }
+    let run = Command::new(env!("CARGO_BIN_EXE_hookdoctor"))
+        .arg("--config")
+        .arg(OsString::from_vec(b"-\xff".to_vec()))
+        .arg("--session")
+        .arg(&session)
+        .arg("--output")
+        .arg(&output)
+        .arg("--report")
+        .arg(&report)
+        .current_dir(&dir)
+        .output()
+        .expect("the binary runs");
+    ar_refuses_usage(&run);
+    std::fs::remove_dir_all(&dir).expect("a pin directory clears");
+}
+
+/// The help cluster pin of obligation AR-3. The help answers
+/// at the point it stands, as the first letter of a cluster
+/// ahead of letters known or not and with an equals sign
+/// standing later in the cluster, and in the long spelling
+/// shortened to a prefix that names it alone, and after a
+/// word the walk set aside, while a cluster it does not lead
+/// and a double dash token never answer it.
+#[test]
+fn test_the_help_answers_at_the_point_it_stands_in_a_cluster_it_leads_and_in_the_long_spelling_shortened_to_a_prefix_that_names_it_alone_and_after_a_word_set_aside_and_a_cluster_it_does_not_lead_and_a_double_dash_token_never_answer_it(
+) {
+    let dir = ar_dir("hookdoctor-cli-ar-help-cluster");
+    let _scratch = ScratchDir::hold(&dir);
+    for args in [
+        &["-hx"][..],
+        &["-hx=y"][..],
+        &["--h"][..],
+        &["--hel"][..],
+        &["-5", "-h"][..],
+    ] {
+        ar_answers_help(&ar_run(&dir, args));
+    }
+    for args in [&["-xh"][..], &["--hx"][..]] {
+        ar_refuses_usage(&ar_run(&dir, args));
+    }
+    std::fs::remove_dir_all(&dir).expect("a pin directory clears");
+}
+
+/// The help equals pin of obligation AR-4. A help flag
+/// carrying an equals value refuses at the point it stands
+/// in both its spellings, with a value and with none, and
+/// refuses ahead of a help standing later in the walk.
+#[test]
+fn test_the_help_flag_carrying_an_equals_value_refuses_at_the_point_it_stands_ahead_of_a_later_help_and_in_both_its_spellings(
+) {
+    let dir = ar_dir("hookdoctor-cli-ar-help-equals");
+    let _scratch = ScratchDir::hold(&dir);
+    for args in [
+        &["-h="][..],
+        &["-h=x"][..],
+        &["--help="][..],
+        &["--help=x"][..],
+        &["-h=x", "-h"][..],
+    ] {
+        ar_refuses_usage(&ar_run(&dir, args));
+    }
+    std::fs::remove_dir_all(&dir).expect("a pin directory clears");
+}
+
+/// The separator pin of obligation AR-5. The separator ends
+/// the option reading where it stands, a full call carrying
+/// it refusing at the end of the walk and the words behind
+/// it standing set aside, and a help behind it does not
+/// answer while a help ahead of it answers first.
+#[test]
+fn test_the_separator_ends_the_option_reading_where_it_stands_and_refuses_the_call_at_the_end_of_the_walk_and_a_help_behind_it_does_not_answer_and_a_help_ahead_of_it_answers(
+) {
+    let dir = ar_dir("hookdoctor-cli-ar-separator");
+    let _scratch = ScratchDir::hold(&dir);
+    let settings = ar_path(&dir, "settings.json");
+    let session = ar_path(&dir, "session.jsonl");
+    let output = ar_path(&dir, "report.json");
+    let report = ar_path(&dir, "report.md");
+    let full: &[&str] = &[
+        "--config",
+        &settings,
+        "--session",
+        &session,
+        "--output",
+        &output,
+        "--report",
+        &report,
+    ];
+    let mut trailing = full.to_vec();
+    trailing.push("--");
+    ar_refuses_usage(&ar_run(&dir, &trailing));
+    let mut behind = full.to_vec();
+    behind.extend(["--", "word"]);
+    ar_refuses_usage(&ar_run(&dir, &behind));
+    ar_refuses_usage(&ar_run(&dir, &["--", "-h"]));
+    ar_answers_help(&ar_run(&dir, &["-h", "--"]));
+    std::fs::remove_dir_all(&dir).expect("a pin directory clears");
+}
