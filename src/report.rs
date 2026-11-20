@@ -144,7 +144,12 @@ pub fn render_markdown(report: &JsonValue) -> String {
         lines.push(String::new());
         for run in &unconfigured {
             let identity = match run.get("command") {
-                Some(JsonValue::Text(command)) => command.clone(),
+                Some(JsonValue::Text(command))
+                    if !command.is_empty()
+                        || !matches!(run.get("name"), Some(JsonValue::Text(_))) =>
+                {
+                    command.clone()
+                }
                 _ => fstring(run.get("name")),
             };
             lines.push(format!(
