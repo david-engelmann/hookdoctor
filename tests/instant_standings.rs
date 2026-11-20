@@ -95,6 +95,10 @@ fn test_the_time_components_refuse_past_their_ranges_and_the_basic_run_reads_its
         Some(1767258000120000)
     );
     assert_eq!(parse_instant("2026-01-01T09000012"), Some(1767258000120000));
+    assert_eq!(
+        parse_instant("2026-01-01T0900001234567Z"),
+        Some(1767258000123456)
+    );
 }
 
 #[test]
@@ -150,6 +154,14 @@ fn test_the_offset_sums_its_components_and_refuses_at_a_full_day_and_a_trailing_
     assert_eq!(
         parse_instant("2026-01-01T09:00:00+23:59:59"),
         Some(1767171601000000)
+    );
+    assert_eq!(
+        parse_instant("2026-01-01T09:00:00+00:60:00"),
+        Some(1767254400000000)
+    );
+    assert_eq!(
+        parse_instant("2026-01-01T09:00:00+00:00:60"),
+        Some(1767257940000000)
     );
     assert_eq!(parse_instant("2026-01-01T09:00:00+24:00:00.0"), None);
     assert_eq!(
