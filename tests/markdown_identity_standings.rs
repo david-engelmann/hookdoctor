@@ -34,47 +34,47 @@ fn markdown(entry: JsonValue) -> String {
 }
 
 #[test]
-fn test_an_empty_command_entry_with_a_number_name_prints_the_gap_in_the_markdown() {
+fn test_an_empty_command_entry_with_a_number_name_spells_the_name_in_the_markdown() {
     let markdown = markdown(run_entry(Some(JsonValue::text("")), JsonValue::Int(5)));
     assert!(markdown.contains("## Unconfigured runs"), "{markdown}");
     assert!(
-        markdown.contains("-  ran at None in session.jsonl on line 3."),
+        markdown.contains("- 5 ran at None in session.jsonl on line 3."),
         "{markdown}"
     );
     assert!(
-        !markdown.contains("- 5 ran at"),
-        "the number name is no name form, so its digits stand nowhere in the identity place: {markdown}"
+        !markdown.contains("-  ran at"),
+        "the gap is no identity, so it stands nowhere in the identity place: {markdown}"
     );
 }
 
 #[test]
-fn test_an_empty_command_entry_with_a_boolean_name_prints_the_gap_in_the_markdown() {
+fn test_an_empty_command_entry_with_a_boolean_name_spells_the_name_in_the_markdown() {
     let markdown = markdown(run_entry(Some(JsonValue::text("")), JsonValue::Bool(false)));
     assert!(markdown.contains("## Unconfigured runs"), "{markdown}");
     assert!(
-        markdown.contains("-  ran at None in session.jsonl on line 3."),
+        markdown.contains("- False ran at None in session.jsonl on line 3."),
         "{markdown}"
     );
     assert!(
-        !markdown.contains("- False ran at"),
-        "the boolean name is no name form, so its word stands nowhere in the identity place: {markdown}"
+        !markdown.contains("-  ran at"),
+        "the gap is no identity, so it stands nowhere in the identity place: {markdown}"
     );
 }
 
 #[test]
-fn test_an_empty_command_entry_with_a_list_name_prints_the_gap_in_the_markdown() {
+fn test_an_empty_command_entry_with_a_list_name_spells_the_name_in_the_markdown() {
     let markdown = markdown(run_entry(
         Some(JsonValue::text("")),
         JsonValue::List(Vec::new()),
     ));
     assert!(markdown.contains("## Unconfigured runs"), "{markdown}");
     assert!(
-        markdown.contains("-  ran at None in session.jsonl on line 3."),
+        markdown.contains("- []\n ran at None in session.jsonl on line 3."),
         "{markdown}"
     );
     assert!(
-        !markdown.contains("- []"),
-        "the list name is no name form, so its rendering stands nowhere in the identity place: {markdown}"
+        !markdown.contains("-  ran at"),
+        "the gap is no identity, so it stands nowhere in the identity place: {markdown}"
     );
 }
 

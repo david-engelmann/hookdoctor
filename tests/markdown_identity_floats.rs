@@ -34,19 +34,19 @@ fn rendered(entry: JsonValue) -> String {
 }
 
 #[test]
-fn test_a_float_name_beside_an_empty_command_prints_the_gap_in_the_markdown() {
+fn test_a_float_name_beside_an_empty_command_spells_the_name_in_the_markdown() {
     let page = rendered(float_entry(
         Some(JsonValue::text("")),
         JsonValue::Float(1.5),
     ));
     assert!(page.contains("## Unconfigured runs"), "{page}");
     assert!(
-        page.contains("-  ran at None in session.jsonl on line 3."),
+        page.contains("- 1.5 ran at None in session.jsonl on line 3."),
         "{page}"
     );
     assert!(
-        !page.contains("- 1.5 ran at"),
-        "the float name is no name form, so its spelling stands nowhere in the identity place {page}"
+        !page.contains("-  ran at"),
+        "the gap is no identity, so it stands nowhere in the identity place {page}"
     );
 }
 
