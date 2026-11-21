@@ -355,3 +355,102 @@ fn test_one_near_miss_stands_per_reason_event_tool_file_and_line() {
         ]
     );
 }
+
+#[test]
+fn test_a_near_miss_stands_for_each_silent_hook_where_two_hooks_share_a_matcher_over_one_call() {
+    let hooks = [
+        hook("PreToolUse:0:0", "Bash", "guard-one.sh"),
+        hook("PreToolUse:1:0", "Bash", "guard-two.sh"),
+    ];
+    let sources = labels(&["only.jsonl"]);
+    let records = [tool_call(
+        Some("sess"),
+        0,
+        1,
+        "2026-01-01T09:00:00Z",
+        "bash",
+        "call-1",
+    )];
+    let misses = near_misses(&hooks, &records, &sources);
+    assert_eq!(
+        shapes(&misses),
+        vec![
+            shape(
+                "PreToolUse:0:0",
+                "bash",
+                "2026-01-01T09:00:00Z",
+                "only.jsonl",
+                1
+            ),
+            shape(
+                "PreToolUse:1:0",
+                "bash",
+                "2026-01-01T09:00:00Z",
+                "only.jsonl",
+                1
+            ),
+        ]
+    );
+}
+
+#[test]
+fn test_two_tools_standing_on_one_line_of_one_file_yield_two_near_misses_for_one_hook() {
+    let hooks = [hook("PreToolUse:0:0", "Bash", "guard-bash.sh")];
+    let sources = labels(&["only.jsonl"]);
+    let records = [
+        tool_call(Some("sess"), 0, 1, "2026-01-01T09:00:00Z", "bash", "call-1"),
+        tool_call(Some("sess"), 0, 1, "2026-01-01T09:00:00Z", "BASH", "call-2"),
+    ];
+    let misses = near_misses(&hooks, &records, &sources);
+    assert_eq!(
+        shapes(&misses),
+        vec![
+            shape(
+                "PreToolUse:0:0",
+                "bash",
+                "2026-01-01T09:00:00Z",
+                "only.jsonl",
+                1
+            ),
+            shape(
+                "PreToolUse:0:0",
+                "BASH",
+                "2026-01-01T09:00:00Z",
+                "only.jsonl",
+                1
+            ),
+        ]
+    );
+}
+
+#[test]
+fn test_the_first_subject_in_record_order_survives_where_two_subjects_share_the_dedup_key_and_part_on_timestamp(
+) {
+    let hooks = [hook("PreToolUse:0:0", "Bash", "guard-bash.sh")];
+    let sources = labels(&["only.jsonl"]);
+    let records = [
+        tool_call(Some("sess"), 0, 1, "2026-01-01T10:00:00Z", "bash", "call-1"),
+        tool_call(Some("sess"), 0, 1, "2026-01-01T08:00:00Z", "bash", "call-2"),
+        tool_call(Some("sess"), 0, 2, "2026-01-01T09:00:00Z", "bash", "call-3"),
+    ];
+    let misses = near_misses(&hooks, &records, &sources);
+    assert_eq!(
+        shapes(&misses),
+        vec![
+            shape(
+                "PreToolUse:0:0",
+                "bash",
+                "2026-01-01T09:00:00Z",
+                "only.jsonl",
+                2
+            ),
+            shape(
+                "PreToolUse:0:0",
+                "bash",
+                "2026-01-01T10:00:00Z",
+                "only.jsonl",
+                1
+            ),
+        ]
+    );
+}
