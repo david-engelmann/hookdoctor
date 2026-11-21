@@ -4,7 +4,7 @@
 //! name as text or as null alone, so the entries below
 //! stand crafted in the shape the examination builds,
 //! with the name respelled as a float. An empty command
-//! beside a float name prints the gap, and a float name
+//! beside a float name prints the name in the identity place, and a float name
 //! beside a null or absent command spells in the
 //! f-string forms, its finite values in the layout the
 //! spelling draws and its three non-finite values in
@@ -34,19 +34,19 @@ fn rendered(entry: JsonValue) -> String {
 }
 
 #[test]
-fn test_a_float_name_beside_an_empty_command_prints_the_gap_in_the_markdown() {
+fn test_a_float_name_beside_an_empty_command_spells_the_name_in_the_markdown() {
     let page = rendered(float_entry(
         Some(JsonValue::text("")),
         JsonValue::Float(1.5),
     ));
     assert!(page.contains("## Unconfigured runs"), "{page}");
     assert!(
-        page.contains("-  ran at None in session.jsonl on line 3."),
+        page.contains("- 1.5 ran at None in session.jsonl on line 3."),
         "{page}"
     );
     assert!(
-        !page.contains("- 1.5 ran at"),
-        "the float name is no name form, so its spelling stands nowhere in the identity place {page}"
+        !page.contains("-  ran at"),
+        "the gap is no identity, so it stands nowhere in the identity place {page}"
     );
 }
 

@@ -4,8 +4,8 @@
 //! writes itself. An entry carrying a name form prints
 //! its name in the markdown where its command stands as
 //! empty text, and prints its command as carried in
-//! every other case, and a stop entry prints its command
-//! as carried because it carries no name form.
+//! every other case, and a stop entry, its name standing as null, prints
+//! the word None in the identity place where its command stands empty.
 
 use std::path::PathBuf;
 use std::process::Command;
@@ -139,7 +139,7 @@ fn test_a_nonempty_command_entry_prints_its_command_in_the_markdown() {
 }
 
 #[test]
-fn test_a_stop_entry_with_an_empty_command_prints_its_command_as_carried_in_the_markdown() {
+fn test_a_stop_entry_with_an_empty_command_prints_none_in_the_identity_place_in_the_markdown() {
     let report = report(&session(&[STOP_EMPTY_COMMAND_LINE]));
     let Some(JsonValue::List(runs)) = report.get("unconfigured_runs") else {
         panic!("the member stands");
@@ -152,8 +152,8 @@ fn test_a_stop_entry_with_an_empty_command_prints_its_command_as_carried_in_the_
     assert_eq!(entry.get("name"), Some(&JsonValue::Null));
     let markdown = render_markdown(&report);
     assert!(
-        markdown.contains("-  ran at Stop in session.jsonl on line 1."),
-        "the stop entry carries no name form, so its identity stands as carried: {markdown}"
+        markdown.contains("- None ran at Stop in session.jsonl on line 1."),
+        "the stop entry its name stands as null, so the word None stands in the identity place: {markdown}"
     );
 }
 
