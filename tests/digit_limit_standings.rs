@@ -53,7 +53,10 @@ fn test_a_hook_output_text_carrying_an_integer_token_past_the_limit_at_a_field_o
 fn test_integer_tokens_at_and_past_the_conversion_limit_stand_through_the_refusing_door_as_big_integers_of_their_exact_text_and_a_negative_token_past_the_limit_carries_its_sign_in_its_text(
 ) {
     let at_limit = "1".repeat(4300);
-    assert_eq!(parse_json(&at_limit), Ok(JsonValue::BigInt(at_limit.clone())));
+    assert_eq!(
+        parse_json(&at_limit),
+        Ok(JsonValue::BigInt(at_limit.clone()))
+    );
     let past_limit = "1".repeat(4301);
     assert_eq!(
         parse_json(&past_limit),
