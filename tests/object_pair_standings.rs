@@ -56,6 +56,7 @@ fn test_two_identical_objects_each_carrying_a_key_twice_with_differing_values_do
     assert_eq!(agreeing, agreeing_twin);
     let single = JsonValue::object(vec![("a", JsonValue::Int(1)), ("b", JsonValue::Int(9))]);
     assert_ne!(differing, single);
+    assert_ne!(single, differing);
 }
 
 #[test]
