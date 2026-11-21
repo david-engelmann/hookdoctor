@@ -294,6 +294,24 @@ fn test_the_dates_of_a_posttooluse_hook_stand_by_the_same_tiebreak_at_the_outcom
         Some("2026-01-01T10:00:00+01:00"),
         2,
     );
+    // The same tied instant with the order of the trace
+    // parted from the order of the text, the universal
+    // spelling standing first among the outcomes and the
+    // minus offset spelling second, so the dates follow
+    // the text and not the order the outcomes stand in.
+    let records = vec![
+        call("c1", Some("2026-01-01T08:00:00Z"), 1),
+        outcome("c1", Some("2026-01-01T09:00:00Z"), 2),
+        call("c2", Some("2026-01-01T08:30:00Z"), 3),
+        outcome("c2", Some("2026-01-01T04:00:00-05:00"), 4),
+    ];
+    assert_dates(
+        "PostToolUse",
+        &records,
+        Some("2026-01-01T04:00:00-05:00"),
+        Some("2026-01-01T09:00:00Z"),
+        2,
+    );
 }
 
 #[test]
@@ -327,5 +345,39 @@ fn test_the_verdicts_of_the_evidence_document_carry_the_dates_as_the_report_entr
     assert_eq!(
         date_text(&verdicts[0], "last_ran_at").as_deref(),
         Some("2026-01-01T10:00:00+01:00")
+    );
+    // The same tied instant with the order of the trace
+    // parted from the order of the text, the universal
+    // spelling standing first among the records and the
+    // minus offset spelling second, so the verdicts
+    // carry the dates the order of the text states and
+    // not the order the records stand in.
+    let records = vec![
+        call("c1", Some("2026-01-01T09:00:00Z"), 1),
+        call("c2", Some("2026-01-01T04:00:00-05:00"), 2),
+    ];
+    let (entries, _) = examine_hooks(&hooks, &records, None, None, &[]).unwrap();
+    let evidence = entries[0].get("evidence").expect("the evidence stands");
+    let document = build_evidence(&hooks, &records, None, None).unwrap();
+    let verdicts = document
+        .get("verdicts")
+        .and_then(JsonValue::as_list)
+        .expect("the verdicts stand as a list");
+    assert_eq!(verdicts.len(), 1);
+    assert_eq!(
+        date_text(&verdicts[0], "first_ran_at"),
+        date_text(evidence, "first_ran_at")
+    );
+    assert_eq!(
+        date_text(&verdicts[0], "last_ran_at"),
+        date_text(evidence, "last_ran_at")
+    );
+    assert_eq!(
+        date_text(&verdicts[0], "first_ran_at").as_deref(),
+        Some("2026-01-01T04:00:00-05:00")
+    );
+    assert_eq!(
+        date_text(&verdicts[0], "last_ran_at").as_deref(),
+        Some("2026-01-01T09:00:00Z")
     );
 }
