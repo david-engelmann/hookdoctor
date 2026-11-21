@@ -824,3 +824,149 @@ fn test_the_separator_ends_the_option_reading_where_it_stands_and_refuses_the_ca
     ar_answers_help(&ar_run(&dir, &["-h", "--"]));
     std::fs::remove_dir_all(&dir).expect("a pin directory clears");
 }
+/// The door helpers of the pins of slice 21. The synthetic
+/// configuration and session files stand in the pin directory,
+/// and each run drives the binary there over the label words
+/// it is given and reads the sources the report carries, so
+/// a pin varies the labels of an invocation at a time and
+/// reads the answer in the report.
+fn sf_fixtures(dir: &Path) {
+    std::fs::write(dir.join("settings.json"), "{\"hooks\": {}}\n")
+        .expect("the configuration stands");
+    let line = "{\"type\": \"user\", \"message\": {\"content\": \"hello\"}}\n";
+    std::fs::write(dir.join("first.jsonl"), line).expect("the first session stands");
+    std::fs::write(dir.join("second.jsonl"), line).expect("the second session stands");
+}
+
+fn sf_run(dir: &Path, extra: &[&str]) -> std::process::Output {
+    let mut command = Command::new(env!("CARGO_BIN_EXE_hookdoctor"));
+    command
+        .arg("--config")
+        .arg(dir.join("settings.json"))
+        .arg("--session")
+        .arg(dir.join("first.jsonl"))
+        .arg("--session")
+        .arg(dir.join("second.jsonl"))
+        .arg("--output")
+        .arg(dir.join("report.json"))
+        .arg("--report")
+        .arg(dir.join("report.md"));
+    for arg in extra {
+        command.arg(arg);
+    }
+    command.output().expect("the binary runs")
+}
+
+fn sf_report(dir: &Path) -> JsonValue {
+    let text = std::fs::read_to_string(dir.join("report.json")).expect("the report stands");
+    read_json_document(&text, "report").expect("the report parses")
+}
+
+fn sf_config_source(report: &JsonValue) -> String {
+    report
+        .get("config_source")
+        .and_then(JsonValue::as_text)
+        .expect("the configuration source stands as text")
+        .to_string()
+}
+
+fn sf_sources(report: &JsonValue) -> Vec<Option<String>> {
+    report
+        .get("session_sources")
+        .and_then(JsonValue::as_list)
+        .expect("the session sources stand as a list")
+        .iter()
+        .map(|item| item.as_text().map(str::to_string))
+        .collect()
+}
+
+/// The empty label pin of obligation SF-8. The door parting
+/// stands at the two seats in one run, the empty
+/// configuration label falling back to the configuration
+/// file name while the empty session label stands as empty
+/// text in the report, and an absent configuration label
+/// falling back the same way.
+#[test]
+fn test_an_empty_configuration_label_falls_back_to_the_configuration_file_name_while_an_empty_session_label_stands_as_empty_text_in_the_report(
+) {
+    let dir = pin_dir("hookdoctor-cli-empty-labels");
+    let _scratch = ScratchDir::hold(&dir);
+    sf_fixtures(&dir);
+    let output = sf_run(
+        &dir,
+        &[
+            "--config-label",
+            "",
+            "--session-label",
+            "",
+            "--session-label",
+            "second",
+        ],
+    );
+    assert_eq!(output.status.code(), Some(0), "the run completes");
+    let report = sf_report(&dir);
+    assert_eq!(sf_config_source(&report), "settings.json");
+    assert_eq!(
+        sf_sources(&report),
+        vec![Some("".to_string()), Some("second".to_string())]
+    );
+    let output = sf_run(&dir, &["--session-label", "first", "--session-label", ""]);
+    assert_eq!(output.status.code(), Some(0), "the run completes");
+    let report = sf_report(&dir);
+    assert_eq!(sf_config_source(&report), "settings.json");
+    assert_eq!(
+        sf_sources(&report),
+        vec![Some("first".to_string()), Some("".to_string())]
+    );
+    std::fs::remove_dir_all(&dir).expect("a pin directory clears");
+}
+
+/// The label order pin of obligation SF-8. A label standing
+/// as whitespace stands as it stands at both seats, neither
+/// seat trimming it or reading it as empty, and the label
+/// count refusal stands ahead of the resolution, a standing
+/// count that differs refusing before an empty label can
+/// stand as a source.
+#[test]
+fn test_labels_standing_as_whitespace_stand_as_they_stand_at_both_seats_and_the_label_count_refusal_stands_ahead_of_the_resolution(
+) {
+    let dir = pin_dir("hookdoctor-cli-label-order");
+    let _scratch = ScratchDir::hold(&dir);
+    sf_fixtures(&dir);
+    let output = sf_run(
+        &dir,
+        &[
+            "--config-label",
+            " ",
+            "--session-label",
+            " ",
+            "--session-label",
+            "\t",
+        ],
+    );
+    assert_eq!(output.status.code(), Some(0), "the run completes");
+    let report = sf_report(&dir);
+    assert_eq!(sf_config_source(&report), " ");
+    assert_eq!(
+        sf_sources(&report),
+        vec![Some(" ".to_string()), Some("\t".to_string())]
+    );
+    std::fs::remove_file(dir.join("report.json")).expect("the first report clears");
+    std::fs::remove_file(dir.join("report.md")).expect("the first markdown clears");
+    let output = sf_run(&dir, &["--session-label", ""]);
+    assert_eq!(
+        output.status.code(),
+        Some(2),
+        "a standing count that differs refuses"
+    );
+    let stderr = String::from_utf8(output.stderr).expect("standard error is text");
+    assert_eq!(
+        stderr,
+        "hookdoctor error: session labels do not match the session files\n"
+    );
+    assert!(
+        !dir.join("report.json").exists(),
+        "the refused count writes nothing"
+    );
+    std::fs::remove_dir_all(&dir).expect("a pin directory clears");
+}
