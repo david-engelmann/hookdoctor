@@ -4,7 +4,7 @@
 //! name as text or as null alone, so the entries below
 //! stand crafted in the shape the examination builds,
 //! with the name respelled as a float. An empty command
-//! beside a float name prints the gap, and a float name
+//! beside a float name prints the name in the identity place, and a float name
 //! beside a null or absent command spells in the
 //! f-string forms, its finite values in the layout the
 //! spelling draws and its three non-finite values in

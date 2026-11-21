@@ -4,8 +4,8 @@
 //! writes itself. An entry carrying a name form prints
 //! its name in the markdown where its command stands as
 //! empty text, and prints its command as carried in
-//! every other case, and a stop entry prints its command
-//! as carried because it carries no name form.
+//! every other case, and a stop entry, its name standing as null, prints
+//! the word None in the identity place where its command stands empty.
 
 use std::path::PathBuf;
 use std::process::Command;

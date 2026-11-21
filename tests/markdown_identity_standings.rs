@@ -4,7 +4,7 @@
 //! name as text or as null alone, so the entries below
 //! stand crafted in the shape the examination builds,
 //! with the name respelled in a kind other than text.
-//! An empty command beside such a name prints the gap,
+//! An empty command beside such a name prints the name in the identity place,
 //! and a command standing in another kind falls through
 //! to the name, and a name standing in another kind
 //! beside a null or absent command spells as the
