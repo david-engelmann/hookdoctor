@@ -968,5 +968,40 @@ fn test_labels_standing_as_whitespace_stand_as_they_stand_at_both_seats_and_the_
         !dir.join("report.json").exists(),
         "the refused count writes nothing"
     );
+    #[cfg(unix)]
+    {
+        use std::ffi::OsString;
+        use std::os::unix::ffi::OsStringExt;
+
+        let output = Command::new(env!("CARGO_BIN_EXE_hookdoctor"))
+            .arg("--config")
+            .arg(dir.join("settings.json"))
+            .arg("--session")
+            .arg(dir.join("first.jsonl"))
+            .arg("--session")
+            .arg(dir.join("second.jsonl"))
+            .arg("--session-label")
+            .arg(OsString::from_vec(b"lab\xffel".to_vec()))
+            .arg("--output")
+            .arg(dir.join("report.json"))
+            .arg("--report")
+            .arg(dir.join("report.md"))
+            .output()
+            .expect("the binary runs");
+        assert_eq!(
+            output.status.code(),
+            Some(2),
+            "a standing count that differs refuses ahead of the label reading"
+        );
+        let stderr = String::from_utf8(output.stderr).expect("standard error is text");
+        assert_eq!(
+            stderr,
+            "hookdoctor error: session labels do not match the session files\n"
+        );
+        assert!(
+            !dir.join("report.json").exists(),
+            "the refused count writes nothing"
+        );
+    }
     std::fs::remove_dir_all(&dir).expect("a pin directory clears");
 }
