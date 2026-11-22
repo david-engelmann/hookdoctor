@@ -195,3 +195,62 @@ fn test_a_party_naming_a_configured_hook_in_another_case_credits_no_hook() {
         vec![standing(1, "firing"), standing(0, "firing-without-effect")]
     );
 }
+
+#[test]
+fn test_a_command_named_verbatim_outside_a_cased_party_credits_the_hook_the_party_names() {
+    assert_eq!(
+        standings(
+            "first-hook.sh logged the failure at the door. the call was denied by FIRST-HOOK.SH"
+        ),
+        vec![standing(1, "firing"), standing(0, "firing-without-effect")]
+    );
+}
+
+#[test]
+fn test_a_wholly_uppercase_denial_keyword_reads_the_attribution_of_its_lowered_form() {
+    assert_eq!(
+        standings("THE CALL WAS DENIED BY EXTERNAL-TOOL"),
+        vec![
+            standing(0, "firing-without-effect"),
+            standing(0, "firing-without-effect")
+        ]
+    );
+    assert_eq!(
+        standings("THE CALL WAS DENIED BY first-hook.sh"),
+        vec![standing(1, "firing"), standing(0, "firing-without-effect")]
+    );
+}
+
+#[test]
+fn test_a_party_in_the_lowered_case_of_an_uppercase_command_credits_no_hook_and_the_verbatim_command_credits_under_the_attribution(
+) {
+    let hooks = [
+        hook("PreToolUse:0:0", "Bash", "FOO_BAR"),
+        hook("PreToolUse:1:0", "Bash", "second-hook.sh"),
+    ];
+    let read = |text: &str| -> Vec<(i64, String)> {
+        let sources = labels(&["only.jsonl"]);
+        let records = [
+            tool_call(Some("sess"), 0, 1, "Bash", "call-1"),
+            error_outcome(Some("sess"), 0, 2, "call-1", text),
+        ];
+        let (entries, _misses) =
+            examine_hooks(&hooks, &records, None, None, &sources).expect("the examination stands");
+        entries.iter().map(denial_and_class).collect()
+    };
+    assert_eq!(
+        read("request denied by foo_bar"),
+        vec![
+            standing(0, "firing-without-effect"),
+            standing(0, "firing-without-effect")
+        ]
+    );
+    assert_eq!(
+        read("request denied by FOO_BAR"),
+        vec![standing(1, "firing"), standing(0, "firing-without-effect")]
+    );
+    assert_eq!(
+        read("request denied by foo_bar, and the log names FOO_BAR as the speaker"),
+        vec![standing(1, "firing"), standing(0, "firing-without-effect")]
+    );
+}
