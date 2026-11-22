@@ -130,3 +130,66 @@ fn test_a_read_of_a_sampled_object_returns_the_last_value_at_a_repeated_name_at_
         Some(&JsonValue::Int(2))
     );
 }
+
+#[test]
+fn test_an_object_carrying_a_key_twice_with_differing_values_against_the_same_key_carrying_agreeing_values_reads_unequal_in_the_one_order_and_equal_in_the_other(
+) {
+    let repeated = JsonValue::object(vec![("a", JsonValue::Int(1)), ("a", JsonValue::Int(2))]);
+    let agreeing = JsonValue::object(vec![("a", JsonValue::Int(1)), ("a", JsonValue::Int(1))]);
+    assert_ne!(repeated, agreeing);
+    assert_eq!(agreeing, repeated);
+    let mirrored = JsonValue::object(vec![("a", JsonValue::Int(2)), ("a", JsonValue::Int(1))]);
+    let mirrored_agreeing =
+        JsonValue::object(vec![("a", JsonValue::Int(2)), ("a", JsonValue::Int(2))]);
+    assert_ne!(mirrored, mirrored_agreeing);
+    assert_eq!(mirrored_agreeing, mirrored);
+    let spread = JsonValue::object(vec![
+        ("a", JsonValue::Int(1)),
+        ("b", JsonValue::Int(9)),
+        ("a", JsonValue::Int(2)),
+    ]);
+    let spread_agreeing = JsonValue::object(vec![
+        ("a", JsonValue::Int(1)),
+        ("b", JsonValue::Int(9)),
+        ("a", JsonValue::Int(1)),
+    ]);
+    assert_ne!(spread, spread_agreeing);
+    assert_eq!(spread_agreeing, spread);
+    let spread_twin = JsonValue::object(vec![
+        ("a", JsonValue::Int(1)),
+        ("b", JsonValue::Int(9)),
+        ("a", JsonValue::Int(2)),
+    ]);
+    assert_ne!(spread, spread_twin);
+    let nested = JsonValue::object(vec![(
+        "x",
+        JsonValue::object(vec![("a", JsonValue::Int(1)), ("a", JsonValue::Int(2))]),
+    )]);
+    let nested_agreeing = JsonValue::object(vec![(
+        "x",
+        JsonValue::object(vec![("a", JsonValue::Int(1)), ("a", JsonValue::Int(1))]),
+    )]);
+    assert_ne!(nested, nested_agreeing);
+    assert_eq!(nested_agreeing, nested);
+    let carried = JsonValue::List(vec![repeated.clone()]);
+    let carried_agreeing = JsonValue::List(vec![agreeing.clone()]);
+    assert_ne!(carried, carried_agreeing);
+    assert_eq!(carried_agreeing, carried);
+    let text_repeated = JsonValue::object(vec![
+        ("a", JsonValue::text("one")),
+        ("a", JsonValue::text("two")),
+    ]);
+    let text_agreeing = JsonValue::object(vec![
+        ("a", JsonValue::text("one")),
+        ("a", JsonValue::text("one")),
+    ]);
+    assert_ne!(text_repeated, text_agreeing);
+    assert_eq!(text_agreeing, text_repeated);
+    let shuffled = JsonValue::object(vec![("a", JsonValue::Int(1)), ("b", JsonValue::Int(9))]);
+    let shuffled_turned =
+        JsonValue::object(vec![("b", JsonValue::Int(9)), ("a", JsonValue::Int(1))]);
+    assert_eq!(shuffled, shuffled_turned);
+    assert_eq!(shuffled_turned, shuffled);
+    assert_ne!(repeated, mirrored);
+    assert_ne!(mirrored, repeated);
+}
