@@ -231,6 +231,18 @@ fn test_an_object_carrying_a_key_twice_against_an_object_carrying_that_key_once_
     ]);
     assert_eq!(triple, triple_carrying);
     assert_ne!(triple_carrying, triple);
+    let compounded = JsonValue::object(vec![
+        ("a", JsonValue::Int(1)),
+        ("a", JsonValue::Int(1)),
+        ("a", JsonValue::Int(1)),
+    ]);
+    let compounded_carrying = JsonValue::object(vec![
+        ("a", JsonValue::Int(1)),
+        ("a", JsonValue::Int(2)),
+        ("b", JsonValue::Int(1)),
+    ]);
+    assert_eq!(compounded, compounded_carrying);
+    assert_ne!(compounded_carrying, compounded);
     let paired = JsonValue::object(vec![
         ("a", JsonValue::Int(1)),
         ("a", JsonValue::Int(1)),
