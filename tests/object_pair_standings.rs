@@ -193,3 +193,140 @@ fn test_an_object_carrying_a_key_twice_with_differing_values_against_the_same_ke
     assert_ne!(repeated, mirrored);
     assert_ne!(mirrored, repeated);
 }
+
+#[test]
+fn test_an_object_carrying_a_key_twice_against_an_object_carrying_that_key_once_and_a_second_key_once_reads_equal_in_the_one_order_and_unequal_in_the_other(
+) {
+    let subset = JsonValue::object(vec![("a", JsonValue::Int(1)), ("a", JsonValue::Int(1))]);
+    let carrying = JsonValue::object(vec![("a", JsonValue::Int(1)), ("b", JsonValue::Int(1))]);
+    assert_eq!(subset, carrying);
+    assert_ne!(carrying, subset);
+    let subset_mirrored =
+        JsonValue::object(vec![("a", JsonValue::Int(2)), ("a", JsonValue::Int(2))]);
+    let carrying_mirrored =
+        JsonValue::object(vec![("a", JsonValue::Int(2)), ("b", JsonValue::Int(7))]);
+    assert_eq!(subset_mirrored, carrying_mirrored);
+    assert_ne!(carrying_mirrored, subset_mirrored);
+    let spread = JsonValue::object(vec![
+        ("a", JsonValue::Int(1)),
+        ("b", JsonValue::Int(5)),
+        ("a", JsonValue::Int(1)),
+    ]);
+    let spread_carrying = JsonValue::object(vec![
+        ("a", JsonValue::Int(1)),
+        ("b", JsonValue::Int(5)),
+        ("c", JsonValue::Int(9)),
+    ]);
+    assert_eq!(spread, spread_carrying);
+    assert_ne!(spread_carrying, spread);
+    let triple = JsonValue::object(vec![
+        ("a", JsonValue::Int(1)),
+        ("a", JsonValue::Int(1)),
+        ("a", JsonValue::Int(1)),
+    ]);
+    let triple_carrying = JsonValue::object(vec![
+        ("a", JsonValue::Int(1)),
+        ("b", JsonValue::Int(1)),
+        ("c", JsonValue::Int(1)),
+    ]);
+    assert_eq!(triple, triple_carrying);
+    assert_ne!(triple_carrying, triple);
+    let compounded = JsonValue::object(vec![
+        ("a", JsonValue::Int(1)),
+        ("a", JsonValue::Int(1)),
+        ("a", JsonValue::Int(1)),
+    ]);
+    let compounded_carrying = JsonValue::object(vec![
+        ("a", JsonValue::Int(1)),
+        ("a", JsonValue::Int(2)),
+        ("b", JsonValue::Int(1)),
+    ]);
+    assert_eq!(compounded, compounded_carrying);
+    assert_ne!(compounded_carrying, compounded);
+    let paired = JsonValue::object(vec![
+        ("a", JsonValue::Int(1)),
+        ("a", JsonValue::Int(1)),
+        ("b", JsonValue::Int(2)),
+        ("b", JsonValue::Int(2)),
+    ]);
+    let paired_carrying = JsonValue::object(vec![
+        ("a", JsonValue::Int(1)),
+        ("b", JsonValue::Int(2)),
+        ("c", JsonValue::Int(3)),
+        ("d", JsonValue::Int(3)),
+    ]);
+    assert_eq!(paired, paired_carrying);
+    assert_ne!(paired_carrying, paired);
+    let nested = JsonValue::object(vec![(
+        "x",
+        JsonValue::object(vec![("a", JsonValue::Int(1)), ("a", JsonValue::Int(1))]),
+    )]);
+    let nested_carrying = JsonValue::object(vec![(
+        "x",
+        JsonValue::object(vec![("a", JsonValue::Int(1)), ("b", JsonValue::Int(1))]),
+    )]);
+    assert_eq!(nested, nested_carrying);
+    assert_ne!(nested_carrying, nested);
+    let carried = JsonValue::List(vec![subset.clone()]);
+    let carried_carrying = JsonValue::List(vec![carrying.clone()]);
+    assert_eq!(carried, carried_carrying);
+    assert_ne!(carried_carrying, carried);
+    let text_subset = JsonValue::object(vec![
+        ("a", JsonValue::text("x")),
+        ("a", JsonValue::text("x")),
+    ]);
+    let text_carrying = JsonValue::object(vec![
+        ("a", JsonValue::text("x")),
+        ("b", JsonValue::text("y")),
+    ]);
+    assert_eq!(text_subset, text_carrying);
+    assert_ne!(text_carrying, text_subset);
+    let differing_subset =
+        JsonValue::object(vec![("a", JsonValue::Int(1)), ("a", JsonValue::Int(2))]);
+    assert_ne!(differing_subset, carrying);
+    assert_ne!(carrying, differing_subset);
+    let absent_other = JsonValue::object(vec![("b", JsonValue::Int(1)), ("b", JsonValue::Int(1))]);
+    assert_ne!(subset, absent_other);
+    assert_ne!(absent_other, subset);
+    let parted = JsonValue::object(vec![("a", JsonValue::Int(2)), ("b", JsonValue::Int(1))]);
+    assert_ne!(subset, parted);
+    assert_ne!(parted, subset);
+    let longer = JsonValue::object(vec![
+        ("a", JsonValue::Int(1)),
+        ("b", JsonValue::Int(1)),
+        ("c", JsonValue::Int(1)),
+    ]);
+    assert_ne!(subset, longer);
+    assert_ne!(longer, subset);
+    let equal_keys = JsonValue::object(vec![
+        ("a", JsonValue::Int(1)),
+        ("a", JsonValue::Int(1)),
+        ("b", JsonValue::Int(2)),
+    ]);
+    let equal_keys_turned = JsonValue::object(vec![
+        ("a", JsonValue::Int(1)),
+        ("b", JsonValue::Int(2)),
+        ("b", JsonValue::Int(2)),
+    ]);
+    assert_eq!(equal_keys, equal_keys_turned);
+    assert_eq!(equal_keys_turned, equal_keys);
+    let shared = JsonValue::object(vec![
+        ("a", JsonValue::Int(1)),
+        ("a", JsonValue::Int(1)),
+        ("b", JsonValue::Int(3)),
+    ]);
+    let shared_parted = JsonValue::object(vec![
+        ("a", JsonValue::Int(1)),
+        ("b", JsonValue::Int(4)),
+        ("c", JsonValue::Int(9)),
+    ]);
+    assert_ne!(shared, shared_parted);
+    assert_ne!(shared_parted, shared);
+    let absent_keyed = JsonValue::object(vec![
+        ("a", JsonValue::Int(1)),
+        ("a", JsonValue::Int(1)),
+        ("z", JsonValue::Int(9)),
+    ]);
+    assert_ne!(absent_keyed, triple_carrying);
+    assert_ne!(triple_carrying, absent_keyed);
+}
