@@ -454,3 +454,60 @@ fn test_the_first_subject_in_record_order_survives_where_two_subjects_share_the_
         ]
     );
 }
+
+#[test]
+fn test_two_subjects_parting_on_the_event_alone_yield_two_near_misses_for_one_hook() {
+    let mut subagent_hook = hook("SubagentStop:0:0", "", "guard-subagent.sh");
+    subagent_hook.event = "SubagentStop".to_string();
+    subagent_hook.matcher = None;
+    let hooks = [subagent_hook];
+    let sources = labels(&["only.jsonl"]);
+    let mut plain = record("hook_run", None, 0, 1);
+    plain.hook_event = Some("Stop".to_string());
+    plain.timestamp = Some("2026-01-01T09:00:00Z".to_string());
+    let mut doubled = record("hook_run", None, 0, 1);
+    doubled.hook_event = Some("SubagentSubagentStop".to_string());
+    doubled.timestamp = Some("2026-01-01T09:01:00Z".to_string());
+    let records = [plain, doubled];
+    let misses = near_misses(&hooks, &records, &sources);
+    assert_eq!(
+        shapes(&misses),
+        vec![
+            (
+                "SubagentStop:0:0".to_string(),
+                "subagent-prefix".to_string(),
+                None,
+                Some("2026-01-01T09:00:00Z".to_string()),
+                Some("only.jsonl".to_string()),
+                1,
+            ),
+            (
+                "SubagentStop:0:0".to_string(),
+                "subagent-prefix".to_string(),
+                None,
+                Some("2026-01-01T09:01:00Z".to_string()),
+                Some("only.jsonl".to_string()),
+                1,
+            ),
+        ]
+    );
+    assert_eq!(
+        misses
+            .iter()
+            .map(|miss| (miss_text(miss, "event"), miss_text(miss, "detail")))
+            .collect::<Vec<_>>(),
+        vec![
+            (
+                Some("Stop".to_string()),
+                Some("event Stop differs from SubagentStop by the Subagent prefix".to_string(),),
+            ),
+            (
+                Some("SubagentSubagentStop".to_string()),
+                Some(
+                    "event SubagentSubagentStop differs from SubagentStop by the Subagent prefix"
+                        .to_string(),
+                ),
+            ),
+        ]
+    );
+}
