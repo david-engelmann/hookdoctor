@@ -180,3 +180,18 @@ fn test_an_attribution_behind_a_word_character_does_not_decide() {
         vec![standing(0, "firing-without-effect"), standing(1, "firing")]
     );
 }
+
+#[test]
+fn test_a_party_naming_a_configured_hook_in_another_case_credits_no_hook() {
+    assert_eq!(
+        standings("the call was denied by FIRST-HOOK.SH"),
+        vec![
+            standing(0, "firing-without-effect"),
+            standing(0, "firing-without-effect")
+        ]
+    );
+    assert_eq!(
+        standings("the call was denied by first-hook.sh"),
+        vec![standing(1, "firing"), standing(0, "firing-without-effect")]
+    );
+}
