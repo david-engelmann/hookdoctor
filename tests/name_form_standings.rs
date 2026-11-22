@@ -285,4 +285,35 @@ fn test_the_suffix_of_a_joined_name_stands_as_the_matcher_text_whole_or_the_comm
         entry_standings(&guard, &control),
         vec![standing("PreToolUse:0:0", 1, 1, 1, "firing")]
     );
+    let colon_command = [hook("Stop:0:0", "Stop", None, "deploy:prod.sh")];
+    let deployed = [run_record(1, "Stop", "Stop:deploy:prod.sh", None, "ran")];
+    assert_eq!(
+        entry_standings(&colon_command, &deployed),
+        vec![standing("Stop:0:0", 1, 1, 1, "firing")]
+    );
+    assert_eq!(unconfigured_list(&colon_command, &deployed).len(), 0);
+    let colon_matcher = [hook(
+        "PreToolUse:0:0",
+        "PreToolUse",
+        Some("a:b"),
+        "tally.sh",
+    )];
+    let matcher_named = [run_record(1, "PreToolUse", "PreToolUse:a:b", None, "ran")];
+    assert_eq!(
+        entry_standings(&colon_matcher, &matcher_named),
+        vec![standing("PreToolUse:0:0", 1, 1, 1, "firing")]
+    );
+    assert_eq!(unconfigured_list(&colon_matcher, &matcher_named).len(), 0);
+    let plain_word = [run_record(1, "PreToolUse", "PreToolUse:Bash", None, "ran")];
+    assert_eq!(
+        entry_standings(&pattern, &plain_word),
+        vec![standing("PreToolUse:0:0", 0, 0, 0, "silent")]
+    );
+    let word_runs = unconfigured_list(&pattern, &plain_word);
+    assert_eq!(word_runs.len(), 1);
+    assert_eq!(
+        word_runs[0].get("name"),
+        Some(&JsonValue::text("PreToolUse:Bash"))
+    );
+    assert_eq!(word_runs[0].get("command"), Some(&JsonValue::Null));
 }
