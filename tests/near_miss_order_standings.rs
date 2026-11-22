@@ -797,7 +797,9 @@ fn test_the_paired_event_reason_stands_for_a_tool_the_matcher_reading_matches_wi
 #[test]
 fn test_a_paired_subject_under_a_hook_whose_matcher_is_not_a_valid_pattern_refuses_the_examination_whole(
 ) {
-    let hooks = [hook("PostToolUse:0:0", "[a-", "log-broken.sh")];
+    let mut broken_hook = hook("PostToolUse:0:0", "[a-", "log-broken.sh");
+    broken_hook.event = "PostToolUse".to_string();
+    let hooks = [broken_hook];
     let sources = labels(&["only.jsonl"]);
     let records = [tool_call(
         Some("sess"),
