@@ -254,3 +254,132 @@ fn test_a_party_in_the_lowered_case_of_an_uppercase_command_credits_no_hook_and_
         vec![standing(1, "firing"), standing(0, "firing-without-effect")]
     );
 }
+
+#[test]
+fn test_the_negation_tail_must_end_immediately_ahead_of_the_denial_word_over_a_run_of_whitespace_and_no_other_separator_carries_it(
+) {
+    assert_eq!(
+        standings("the request was not denied"),
+        vec![
+            standing(0, "firing-without-effect"),
+            standing(0, "firing-without-effect")
+        ]
+    );
+    assert_eq!(
+        standings("the request was not really denied"),
+        vec![standing(1, "firing"), standing(1, "firing")]
+    );
+    assert_eq!(
+        standings("the request was not  denied"),
+        vec![
+            standing(0, "firing-without-effect"),
+            standing(0, "firing-without-effect")
+        ]
+    );
+    assert_eq!(
+        standings("the request was not\tdenied"),
+        vec![
+            standing(0, "firing-without-effect"),
+            standing(0, "firing-without-effect")
+        ]
+    );
+    assert_eq!(
+        standings("the request was not:denied"),
+        vec![standing(1, "firing"), standing(1, "firing")]
+    );
+}
+
+#[test]
+fn test_the_negation_tails_stand_as_four_spellings_with_a_word_boundary_ahead_of_the_word_tails_and_no_boundary_ahead_of_the_contracted_tails(
+) {
+    assert_eq!(
+        standings("the call wasn't denied"),
+        vec![
+            standing(0, "firing-without-effect"),
+            standing(0, "firing-without-effect")
+        ]
+    );
+    assert_eq!(
+        standings("the call wasn’t denied"),
+        vec![
+            standing(0, "firing-without-effect"),
+            standing(0, "firing-without-effect")
+        ]
+    );
+    assert_eq!(
+        standings("the knot denied the call"),
+        vec![standing(1, "firing"), standing(1, "firing")]
+    );
+    assert_eq!(
+        standings("the gate whenever denied the request"),
+        vec![standing(1, "firing"), standing(1, "firing")]
+    );
+    assert_eq!(
+        standings("the hook never denied the call"),
+        vec![
+            standing(0, "firing-without-effect"),
+            standing(0, "firing-without-effect")
+        ]
+    );
+    assert_eq!(
+        standings("the request was NOT DENIED"),
+        vec![
+            standing(0, "firing-without-effect"),
+            standing(0, "firing-without-effect")
+        ]
+    );
+}
+
+#[test]
+fn test_the_negation_reading_runs_over_the_denial_word_word_bounded_on_both_sides_and_an_opening_tail_negates(
+) {
+    assert_eq!(
+        standings(
+            "the request was not deniedby the gate and the retry was denied by first-hook.sh"
+        ),
+        vec![standing(1, "firing"), standing(0, "firing-without-effect")]
+    );
+    assert_eq!(
+        standings("not denied"),
+        vec![
+            standing(0, "firing-without-effect"),
+            standing(0, "firing-without-effect")
+        ]
+    );
+    assert_eq!(
+        standings("denied"),
+        vec![standing(1, "firing"), standing(1, "firing")]
+    );
+    assert_eq!(
+        standings("the request was undenied"),
+        vec![
+            standing(0, "firing-without-effect"),
+            standing(0, "firing-without-effect")
+        ]
+    );
+}
+
+#[test]
+fn test_one_negated_occurrence_vetoes_the_whole_text_ahead_of_the_attribution_at_either_order_of_the_occurrences(
+) {
+    assert_eq!(
+        standings("the request was not denied and the retry was denied by first-hook.sh"),
+        vec![
+            standing(0, "firing-without-effect"),
+            standing(0, "firing-without-effect")
+        ]
+    );
+    assert_eq!(
+        standings("the call was denied by first-hook.sh and the request was not denied"),
+        vec![
+            standing(0, "firing-without-effect"),
+            standing(0, "firing-without-effect")
+        ]
+    );
+    assert_eq!(
+        standings(
+            "the call was denied by first-hook.sh and the retry was denied by second-hook.sh"
+        ),
+        vec![standing(1, "firing"), standing(0, "firing-without-effect")]
+    );
+}
