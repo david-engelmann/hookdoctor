@@ -287,6 +287,13 @@ fn test_the_negation_tail_must_end_immediately_ahead_of_the_denial_word_over_a_r
         standings("the request was not:denied"),
         vec![standing(1, "firing"), standing(1, "firing")]
     );
+    assert_eq!(
+        standings("the request was not\u{1c}denied"),
+        vec![
+            standing(0, "firing-without-effect"),
+            standing(0, "firing-without-effect")
+        ]
+    );
 }
 
 #[test]
