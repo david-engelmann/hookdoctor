@@ -1005,3 +1005,425 @@ fn test_labels_standing_as_whitespace_stand_as_they_stand_at_both_seats_and_the_
     }
     std::fs::remove_dir_all(&dir).expect("a pin directory clears");
 }
+
+/// The door write helpers of the pins of slice 38. The
+/// recorded synthetic configuration and session stand in the
+/// pin directory, and each run drives the binary there, so a
+/// pin hands the door the path words it chooses and reads
+/// the answer in the files the run leaves standing or in
+/// the refusal it speaks.
+fn dw_dir(name: &str) -> PathBuf {
+    let dir = pin_dir(name);
+    let settings = recorded_input(
+        "deterministic outputs over the examples",
+        "synthetic-settings.json",
+    );
+    let session = recorded_input(
+        "deterministic outputs over the examples",
+        "synthetic-session.jsonl",
+    );
+    std::fs::write(dir.join("settings.json"), settings.as_bytes())
+        .expect("the configuration stands");
+    std::fs::write(dir.join("session.jsonl"), session.as_bytes()).expect("the session stands");
+    dir
+}
+
+fn dw_run(dir: &Path, args: &[&str]) -> std::process::Output {
+    Command::new(env!("CARGO_BIN_EXE_hookdoctor"))
+        .args(args)
+        .current_dir(dir)
+        .output()
+        .expect("the binary runs")
+}
+
+fn dw_path(dir: &Path, name: &str) -> String {
+    dir.join(name)
+        .to_str()
+        .expect("a pin directory path is text")
+        .to_string()
+}
+
+fn dw_completes(output: &std::process::Output) {
+    assert_eq!(
+        output.status.code(),
+        Some(0),
+        "a writing run exits with code 0"
+    );
+    assert!(
+        output.stdout.is_empty(),
+        "a writing run writes nothing to standard output"
+    );
+    assert!(
+        output.stderr.is_empty(),
+        "a writing run writes nothing to standard error"
+    );
+}
+
+fn dw_refuses_write(output: &std::process::Output) {
+    assert_eq!(
+        output.status.code(),
+        Some(2),
+        "a refused write exits with code 2"
+    );
+    let stderr = String::from_utf8(output.stderr.clone()).expect("standard error is text");
+    assert_eq!(
+        stderr, "hookdoctor error: an output could not be written\n",
+        "a refused write speaks the one wording"
+    );
+    assert!(
+        output.stdout.is_empty(),
+        "a refused write writes nothing to standard output"
+    );
+}
+
+/// The creation pin of obligation DW-2. The door creates
+/// the missing parents of its output and of its report at
+/// one level in separate trees and at the foot of missing
+/// chains and inside one tree the two writes share, and
+/// each file stands with its rendered content whole, the
+/// content standing identical at every seat because the
+/// one examination renders it.
+#[test]
+fn test_the_door_creates_the_missing_parents_of_its_output_and_its_report_at_one_level_and_at_depth_and_in_a_shared_tree(
+) {
+    let dir = dw_dir("hookdoctor-cli-dw-creation");
+    let _scratch = ScratchDir::hold(&dir);
+    let settings = dw_path(&dir, "settings.json");
+    let session = dw_path(&dir, "session.jsonl");
+    let one_output = dw_path(&dir, "one-a/out.json");
+    let one_report = dw_path(&dir, "one-b/report.md");
+    let run = dw_run(
+        &dir,
+        &[
+            "--config",
+            &settings,
+            "--session",
+            &session,
+            "--output",
+            &one_output,
+            "--report",
+            &one_report,
+        ],
+    );
+    dw_completes(&run);
+    let output_bytes = std::fs::read(dir.join("one-a/out.json")).expect("the output stands");
+    let report_bytes = std::fs::read(dir.join("one-b/report.md")).expect("the report stands");
+    assert!(
+        !output_bytes.is_empty() && !report_bytes.is_empty(),
+        "the created parents carry the rendered files whole"
+    );
+    let deep_output = dw_path(&dir, "deep-a/b/c/out.json");
+    let deep_report = dw_path(&dir, "deep-x/y/z/report.md");
+    let run = dw_run(
+        &dir,
+        &[
+            "--config",
+            &settings,
+            "--session",
+            &session,
+            "--output",
+            &deep_output,
+            "--report",
+            &deep_report,
+        ],
+    );
+    dw_completes(&run);
+    assert_eq!(
+        std::fs::read(dir.join("deep-a/b/c/out.json")).expect("the deep output stands"),
+        output_bytes,
+        "the output at depth carries the same rendered content"
+    );
+    assert_eq!(
+        std::fs::read(dir.join("deep-x/y/z/report.md")).expect("the deep report stands"),
+        report_bytes,
+        "the report at depth carries the same rendered content"
+    );
+    let shared_output = dw_path(&dir, "shared/out.json");
+    let shared_report = dw_path(&dir, "shared/report.md");
+    let run = dw_run(
+        &dir,
+        &[
+            "--config",
+            &settings,
+            "--session",
+            &session,
+            "--output",
+            &shared_output,
+            "--report",
+            &shared_report,
+        ],
+    );
+    dw_completes(&run);
+    assert_eq!(
+        std::fs::read(dir.join("shared/out.json")).expect("the shared output stands"),
+        output_bytes,
+        "the output in the shared tree carries the same rendered content"
+    );
+    assert_eq!(
+        std::fs::read(dir.join("shared/report.md")).expect("the shared report stands"),
+        report_bytes,
+        "the report in the shared tree carries the same rendered content"
+    );
+    std::fs::remove_dir_all(&dir).expect("a pin directory clears");
+}
+
+/// The evidence creation pin of obligation DW-2. The
+/// creation reaches the third seat of the door, the
+/// evidence write standing under its flag, at the foot of
+/// a missing chain beside an output and a report that
+/// stand flat.
+#[test]
+fn test_the_door_creates_the_missing_parents_of_its_evidence_at_depth() {
+    let dir = dw_dir("hookdoctor-cli-dw-evidence");
+    let _scratch = ScratchDir::hold(&dir);
+    let settings = dw_path(&dir, "settings.json");
+    let session = dw_path(&dir, "session.jsonl");
+    let output = dw_path(&dir, "out.json");
+    let report = dw_path(&dir, "report.md");
+    let evidence = dw_path(&dir, "ev/deep/evidence.json");
+    let run = dw_run(
+        &dir,
+        &[
+            "--config",
+            &settings,
+            "--session",
+            &session,
+            "--output",
+            &output,
+            "--report",
+            &report,
+            "--evidence",
+            &evidence,
+        ],
+    );
+    dw_completes(&run);
+    let evidence_bytes =
+        std::fs::read(dir.join("ev/deep/evidence.json")).expect("the evidence stands");
+    assert!(
+        !evidence_bytes.is_empty(),
+        "the created parents carry the rendered evidence whole"
+    );
+    assert!(dir.join("out.json").is_file(), "the output stands flat");
+    assert!(dir.join("report.md").is_file(), "the report stands flat");
+    std::fs::remove_dir_all(&dir).expect("a pin directory clears");
+}
+
+/// The bare name pin of obligation DW-3. A bare file name
+/// carries the empty parent, and the door writes it into
+/// the working directory the run stands in. The pin fences
+/// the standing and not the empty parent guard of the
+/// write, because the creation call the guard stands ahead
+/// of succeeds on an empty path as well, so no pin can
+/// fail on the guard alone.
+#[test]
+fn test_the_door_writes_a_bare_file_name_into_the_working_directory() {
+    let dir = dw_dir("hookdoctor-cli-dw-bare");
+    let _scratch = ScratchDir::hold(&dir);
+    let run = dw_run(
+        &dir,
+        &[
+            "--config",
+            "settings.json",
+            "--session",
+            "session.jsonl",
+            "--output",
+            "out.json",
+            "--report",
+            "report.md",
+        ],
+    );
+    dw_completes(&run);
+    assert!(
+        dir.join("out.json").is_file(),
+        "the bare output name lands in the working directory"
+    );
+    assert!(
+        dir.join("report.md").is_file(),
+        "the bare report name lands in the working directory"
+    );
+    std::fs::remove_dir_all(&dir).expect("a pin directory clears");
+}
+
+/// The blocked parent pin of obligation DW-4. A component
+/// of the parent path standing as a regular file refuses
+/// the write under the one wording, at the head of the
+/// output chain and at the head of the report chain with
+/// the blocked component standing over a further component
+/// below it, and no file stands created at the refused
+/// path.
+#[test]
+fn test_the_door_refuses_where_a_parent_of_its_output_or_its_report_stands_as_a_file() {
+    let dir = dw_dir("hookdoctor-cli-dw-blocked");
+    let _scratch = ScratchDir::hold(&dir);
+    let settings = dw_path(&dir, "settings.json");
+    let session = dw_path(&dir, "session.jsonl");
+    std::fs::write(
+        dir.join("blocker"),
+        "a file standing where a parent is asked",
+    )
+    .expect("the blocking file stands");
+    let blocked_output = dw_path(&dir, "blocker/out.json");
+    let flat_report = dw_path(&dir, "report.md");
+    let run = dw_run(
+        &dir,
+        &[
+            "--config",
+            &settings,
+            "--session",
+            &session,
+            "--output",
+            &blocked_output,
+            "--report",
+            &flat_report,
+        ],
+    );
+    dw_refuses_write(&run);
+    assert!(
+        !dir.join("blocker/out.json").exists(),
+        "no file stands created at the refused output path"
+    );
+    let flat_output = dw_path(&dir, "out.json");
+    let blocked_report = dw_path(&dir, "blocker/sub/report.md");
+    let run = dw_run(
+        &dir,
+        &[
+            "--config",
+            &settings,
+            "--session",
+            &session,
+            "--output",
+            &flat_output,
+            "--report",
+            &blocked_report,
+        ],
+    );
+    dw_refuses_write(&run);
+    assert!(
+        !dir.join("blocker/sub/report.md").exists(),
+        "no file stands created at the refused report path"
+    );
+    std::fs::remove_dir_all(&dir).expect("a pin directory clears");
+}
+
+/// The directory path pin of obligation DW-4. A path
+/// standing as a directory refuses its own write under
+/// the one wording, and the directory stands as it stood.
+#[test]
+fn test_the_door_refuses_where_its_output_path_stands_as_a_directory() {
+    let dir = dw_dir("hookdoctor-cli-dw-dirpath");
+    let _scratch = ScratchDir::hold(&dir);
+    let settings = dw_path(&dir, "settings.json");
+    let session = dw_path(&dir, "session.jsonl");
+    std::fs::create_dir_all(dir.join("outdir")).expect("the standing directory stands");
+    let output = dw_path(&dir, "outdir");
+    let report = dw_path(&dir, "report.md");
+    let run = dw_run(
+        &dir,
+        &[
+            "--config",
+            &settings,
+            "--session",
+            &session,
+            "--output",
+            &output,
+            "--report",
+            &report,
+        ],
+    );
+    dw_refuses_write(&run);
+    assert!(
+        dir.join("outdir").is_dir(),
+        "the directory stands as it stood"
+    );
+    std::fs::remove_dir_all(&dir).expect("a pin directory clears");
+}
+
+/// The partial standing pin of obligation DW-5. A refusal
+/// at a later write leaves every earlier file standing
+/// written with its content whole, the report blocked
+/// after the output writes and the evidence blocked after
+/// the output and the report write, and the run removes
+/// nothing and alters nothing it already wrote.
+#[test]
+fn test_the_door_leaves_the_earlier_files_standing_where_a_later_write_is_refused() {
+    let dir = dw_dir("hookdoctor-cli-dw-partial");
+    let _scratch = ScratchDir::hold(&dir);
+    let settings = dw_path(&dir, "settings.json");
+    let session = dw_path(&dir, "session.jsonl");
+    std::fs::create_dir_all(dir.join("control")).expect("the control directory stands");
+    let control_output = dw_path(&dir, "control/out.json");
+    let control_report = dw_path(&dir, "control/report.md");
+    let run = dw_run(
+        &dir,
+        &[
+            "--config",
+            &settings,
+            "--session",
+            &session,
+            "--output",
+            &control_output,
+            "--report",
+            &control_report,
+        ],
+    );
+    dw_completes(&run);
+    let output_bytes =
+        std::fs::read(dir.join("control/out.json")).expect("the control output stands");
+    let report_bytes =
+        std::fs::read(dir.join("control/report.md")).expect("the control report stands");
+    std::fs::write(
+        dir.join("blocker"),
+        "a file standing where a parent is asked",
+    )
+    .expect("the blocking file stands");
+    let output = dw_path(&dir, "out.json");
+    let blocked_report = dw_path(&dir, "blocker/report.md");
+    let run = dw_run(
+        &dir,
+        &[
+            "--config",
+            &settings,
+            "--session",
+            &session,
+            "--output",
+            &output,
+            "--report",
+            &blocked_report,
+        ],
+    );
+    dw_refuses_write(&run);
+    assert_eq!(
+        std::fs::read(dir.join("out.json")).expect("the earlier output stands"),
+        output_bytes,
+        "the earlier output stands written with its content whole"
+    );
+    let report = dw_path(&dir, "report.md");
+    let blocked_evidence = dw_path(&dir, "blocker/evidence.json");
+    let run = dw_run(
+        &dir,
+        &[
+            "--config",
+            &settings,
+            "--session",
+            &session,
+            "--output",
+            &output,
+            "--report",
+            &report,
+            "--evidence",
+            &blocked_evidence,
+        ],
+    );
+    dw_refuses_write(&run);
+    assert_eq!(
+        std::fs::read(dir.join("out.json")).expect("the earlier output stands"),
+        output_bytes,
+        "the earlier output stands written with its content whole"
+    );
+    assert_eq!(
+        std::fs::read(dir.join("report.md")).expect("the earlier report stands"),
+        report_bytes,
+        "the earlier report stands written with its content whole"
+    );
+    std::fs::remove_dir_all(&dir).expect("a pin directory clears");
+}
