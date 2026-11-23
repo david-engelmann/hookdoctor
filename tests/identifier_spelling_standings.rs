@@ -83,6 +83,9 @@ fn test_the_event_stands_verbatim_in_the_identifier_at_its_boundary_shapes() {
         ids(&doc("My Event", &[group(&[entry("a.sh")])])),
         ["My Event:0:0"]
     );
+    assert_eq!(ids(&doc(" E", &[group(&[entry("a.sh")])])), [" E:0:0"]);
+    assert_eq!(ids(&doc("E ", &[group(&[entry("a.sh")])])), ["E :0:0"]);
+    assert_eq!(ids(&doc(" E ", &[group(&[entry("a.sh")])])), [" E :0:0"]);
     assert_eq!(
         ids(&doc("E:0:0", &[group(&[entry("a.sh")])])),
         ["E:0:0:0:0"]
