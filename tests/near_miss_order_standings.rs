@@ -812,3 +812,350 @@ fn test_a_paired_subject_under_a_hook_whose_matcher_is_not_a_valid_pattern_refus
     let outcome = examine_hooks(&hooks, &records, None, None, &sources);
     assert!(outcome.is_err());
 }
+
+fn only_detail(misses: &[JsonValue]) -> String {
+    assert_eq!(misses.len(), 1, "exactly one miss stands");
+    miss_text(&misses[0], "detail").expect("the miss carries its detail")
+}
+
+#[test]
+fn test_near_miss_name_form_detail_stands_at_every_fold_grain() {
+    let sources = labels(&["only.jsonl"]);
+
+    let case_hooks = [hook("PreToolUse:0:0", "Bash", "guard.sh")];
+    let case_records = [tool_call(
+        Some("sess"),
+        0,
+        1,
+        "2026-01-01T09:00:00Z",
+        "bash",
+        "c1",
+    )];
+    let case_misses = near_misses(&case_hooks, &case_records, &sources);
+    assert_eq!(
+        only_detail(&case_misses),
+        "tool bash differs from matcher Bash by letter case or separator form only"
+    );
+
+    let separator_hooks = [hook("PreToolUse:0:0", "web_fetch", "guard.sh")];
+    let separator_records = [tool_call(
+        Some("sess"),
+        0,
+        1,
+        "2026-01-01T09:00:00Z",
+        "web-fetch",
+        "c1",
+    )];
+    let separator_misses = near_misses(&separator_hooks, &separator_records, &sources);
+    assert_eq!(
+        only_detail(&separator_misses),
+        "tool web-fetch differs from matcher web_fetch by letter case or separator form only"
+    );
+
+    let joined_hooks = [hook("PreToolUse:0:0", "My_Tool", "guard.sh")];
+    let joined_records = [tool_call(
+        Some("sess"),
+        0,
+        1,
+        "2026-01-01T09:00:00Z",
+        "mytool",
+        "c1",
+    )];
+    let joined_misses = near_misses(&joined_hooks, &joined_records, &sources);
+    assert_eq!(
+        only_detail(&joined_misses),
+        "tool mytool differs from matcher My_Tool by letter case or separator form only"
+    );
+
+    let crossed_hooks = [hook("PreToolUse:0:0", "my_tool", "guard.sh")];
+    let crossed_records = [tool_call(
+        Some("sess"),
+        0,
+        1,
+        "2026-01-01T09:00:00Z",
+        "MY_TOOL",
+        "c1",
+    )];
+    let crossed_misses = near_misses(&crossed_hooks, &crossed_records, &sources);
+    assert_eq!(
+        only_detail(&crossed_misses),
+        "tool MY_TOOL differs from matcher my_tool by letter case or separator form only"
+    );
+
+    let mut post_hook = hook("PostToolUse:0:0", "Bash", "log.sh");
+    post_hook.event = "PostToolUse".to_string();
+    let post_hooks = [post_hook];
+    let mut outcome = record("tool_outcome", Some("sess"), 0, 2);
+    outcome.call_id = Some("c1".to_string());
+    outcome.timestamp = Some("2026-01-01T09:00:00Z".to_string());
+    let post_records = [
+        tool_call(Some("sess"), 0, 1, "2026-01-01T09:00:00Z", "bash", "c1"),
+        outcome,
+    ];
+    let post_misses = near_misses(&post_hooks, &post_records, &sources);
+    assert_eq!(
+        only_detail(&post_misses),
+        "tool bash differs from matcher Bash by letter case or separator form only"
+    );
+}
+
+#[test]
+fn test_near_miss_one_letter_detail_stands_at_each_edit_kind() {
+    let sources = labels(&["only.jsonl"]);
+
+    let deletion_hooks = [hook("PreToolUse:0:0", "Bash", "guard.sh")];
+    let deletion_records = [tool_call(
+        Some("sess"),
+        0,
+        1,
+        "2026-01-01T09:00:00Z",
+        "Bsh",
+        "c1",
+    )];
+    let deletion_misses = near_misses(&deletion_hooks, &deletion_records, &sources);
+    assert_eq!(
+        only_detail(&deletion_misses),
+        "tool Bsh is one letter away from matcher Bash"
+    );
+
+    let insertion_hooks = [hook("PreToolUse:0:0", "Bashh", "guard.sh")];
+    let insertion_records = [tool_call(
+        Some("sess"),
+        0,
+        1,
+        "2026-01-01T09:00:00Z",
+        "Bash",
+        "c1",
+    )];
+    let insertion_misses = near_misses(&insertion_hooks, &insertion_records, &sources);
+    assert_eq!(
+        only_detail(&insertion_misses),
+        "tool Bash is one letter away from matcher Bashh"
+    );
+
+    let substitution_hooks = [hook("PreToolUse:0:0", "Bash", "guard.sh")];
+    let substitution_records = [tool_call(
+        Some("sess"),
+        0,
+        1,
+        "2026-01-01T09:00:00Z",
+        "Bosh",
+        "c1",
+    )];
+    let substitution_misses = near_misses(&substitution_hooks, &substitution_records, &sources);
+    assert_eq!(
+        only_detail(&substitution_misses),
+        "tool Bosh is one letter away from matcher Bash"
+    );
+
+    let transposition_hooks = [hook("PreToolUse:0:0", "Bash", "guard.sh")];
+    let transposition_records = [tool_call(
+        Some("sess"),
+        0,
+        1,
+        "2026-01-01T09:00:00Z",
+        "Bsah",
+        "c1",
+    )];
+    let transposition_misses = near_misses(&transposition_hooks, &transposition_records, &sources);
+    assert!(
+        transposition_misses.is_empty(),
+        "a transposition at distance two yields no miss"
+    );
+}
+
+#[test]
+fn test_near_miss_paired_detail_stands_under_every_matcher_standing() {
+    let sources = labels(&["only.jsonl"]);
+    let sentence =
+        "event PreToolUse is the paired event of PostToolUse for tool Bash the matcher matches";
+    let records = [tool_call(
+        Some("sess"),
+        0,
+        1,
+        "2026-01-01T09:00:00Z",
+        "Bash",
+        "c1",
+    )];
+
+    let mut matcherless_hook = hook("PostToolUse:0:0", "", "log.sh");
+    matcherless_hook.event = "PostToolUse".to_string();
+    matcherless_hook.matcher = None;
+    let matcherless_hooks = [matcherless_hook];
+    let matcherless_misses = near_misses(&matcherless_hooks, &records, &sources);
+    assert_eq!(only_detail(&matcherless_misses), sentence);
+
+    let mut plain_hook = hook("PostToolUse:0:0", "Bash", "log.sh");
+    plain_hook.event = "PostToolUse".to_string();
+    let plain_hooks = [plain_hook];
+    let plain_misses = near_misses(&plain_hooks, &records, &sources);
+    assert_eq!(only_detail(&plain_misses), sentence);
+
+    let mut pattern_hook = hook("PostToolUse:0:0", "Ba.h", "log.sh");
+    pattern_hook.event = "PostToolUse".to_string();
+    let pattern_hooks = [pattern_hook];
+    let pattern_misses = near_misses(&pattern_hooks, &records, &sources);
+    assert_eq!(only_detail(&pattern_misses), sentence);
+
+    let mut unmatched_hook = hook("PostToolUse:0:0", "Bashh", "log.sh");
+    unmatched_hook.event = "PostToolUse".to_string();
+    let unmatched_hooks = [unmatched_hook];
+    let unmatched_misses = near_misses(&unmatched_hooks, &records, &sources);
+    assert!(
+        unmatched_misses.is_empty(),
+        "a tool the matcher reading does not match yields no miss"
+    );
+}
+
+#[test]
+fn test_near_miss_subagent_detail_stands_in_both_directions() {
+    let sources = labels(&["only.jsonl"]);
+
+    let mut stop_hook = hook("Stop:0:0", "", "guard.sh");
+    stop_hook.event = "Stop".to_string();
+    stop_hook.matcher = None;
+    let forward_hooks = [stop_hook];
+    let mut forward_run = record("hook_run", None, 0, 1);
+    forward_run.hook_event = Some("SubagentStop".to_string());
+    forward_run.timestamp = Some("2026-01-01T09:00:00Z".to_string());
+    let forward_records = [forward_run];
+    let forward_misses = near_misses(&forward_hooks, &forward_records, &sources);
+    assert_eq!(
+        only_detail(&forward_misses),
+        "event SubagentStop differs from Stop by the Subagent prefix"
+    );
+
+    let mut subagent_stop_hook = hook("SubagentStop:0:0", "", "guard.sh");
+    subagent_stop_hook.event = "SubagentStop".to_string();
+    subagent_stop_hook.matcher = None;
+    let reverse_hooks = [subagent_stop_hook];
+    let mut reverse_run = record("hook_run", None, 0, 1);
+    reverse_run.hook_event = Some("Stop".to_string());
+    reverse_run.timestamp = Some("2026-01-01T09:00:00Z".to_string());
+    let reverse_records = [reverse_run];
+    let reverse_misses = near_misses(&reverse_hooks, &reverse_records, &sources);
+    assert_eq!(
+        only_detail(&reverse_misses),
+        "event Stop differs from SubagentStop by the Subagent prefix"
+    );
+
+    let mut carrying_hook = hook("SubagentPreToolUse:0:0", "Bash", "guard.sh");
+    carrying_hook.event = "SubagentPreToolUse".to_string();
+    let carrying_hooks = [carrying_hook];
+    let carrying_records = [tool_call(
+        Some("sess"),
+        0,
+        1,
+        "2026-01-01T09:00:00Z",
+        "Bash",
+        "c1",
+    )];
+    let carrying_misses = near_misses(&carrying_hooks, &carrying_records, &sources);
+    assert_eq!(
+        only_detail(&carrying_misses),
+        "event PreToolUse differs from SubagentPreToolUse by the Subagent prefix"
+    );
+}
+
+#[test]
+fn test_near_miss_detail_stands_present_on_every_miss() {
+    let sources = labels(&["only.jsonl"]);
+    let mut scenarios: Vec<(Vec<HookConfig>, Vec<TraceRecord>)> = Vec::new();
+
+    scenarios.push((
+        vec![hook("PreToolUse:0:0", "Bash", "guard.sh")],
+        vec![tool_call(
+            Some("sess"),
+            0,
+            1,
+            "2026-01-01T09:00:00Z",
+            "bash",
+            "c1",
+        )],
+    ));
+    scenarios.push((
+        vec![hook("PreToolUse:0:0", "Bash", "guard.sh")],
+        vec![tool_call(
+            Some("sess"),
+            0,
+            1,
+            "2026-01-01T09:00:00Z",
+            "Bsh",
+            "c1",
+        )],
+    ));
+    scenarios.push((
+        vec![hook("PreToolUse:0:0", "My_Tool", "guard.sh")],
+        vec![tool_call(
+            Some("sess"),
+            0,
+            1,
+            "2026-01-01T09:00:00Z",
+            "mytool",
+            "c1",
+        )],
+    ));
+
+    let mut paired_hook = hook("PostToolUse:0:0", "", "log.sh");
+    paired_hook.event = "PostToolUse".to_string();
+    paired_hook.matcher = None;
+    scenarios.push((
+        vec![paired_hook],
+        vec![tool_call(
+            Some("sess"),
+            0,
+            1,
+            "2026-01-01T09:00:00Z",
+            "Bash",
+            "c1",
+        )],
+    ));
+
+    let mut post_hook = hook("PostToolUse:0:0", "Bash", "log.sh");
+    post_hook.event = "PostToolUse".to_string();
+    let mut outcome = record("tool_outcome", Some("sess"), 0, 2);
+    outcome.call_id = Some("c1".to_string());
+    outcome.timestamp = Some("2026-01-01T09:00:00Z".to_string());
+    scenarios.push((
+        vec![post_hook],
+        vec![
+            tool_call(Some("sess"), 0, 1, "2026-01-01T09:00:00Z", "bash", "c1"),
+            outcome,
+        ],
+    ));
+
+    let mut stop_hook = hook("Stop:0:0", "", "guard.sh");
+    stop_hook.event = "Stop".to_string();
+    stop_hook.matcher = None;
+    let mut forward_run = record("hook_run", None, 0, 1);
+    forward_run.hook_event = Some("SubagentStop".to_string());
+    forward_run.timestamp = Some("2026-01-01T09:00:00Z".to_string());
+    scenarios.push((vec![stop_hook], vec![forward_run]));
+
+    let mut subagent_stop_hook = hook("SubagentStop:0:0", "", "guard.sh");
+    subagent_stop_hook.event = "SubagentStop".to_string();
+    subagent_stop_hook.matcher = None;
+    let mut plain_run = record("hook_run", None, 0, 1);
+    plain_run.hook_event = Some("Stop".to_string());
+    plain_run.timestamp = Some("2026-01-01T09:00:00Z".to_string());
+    let mut doubled_run = record("hook_run", None, 0, 1);
+    doubled_run.hook_event = Some("SubagentSubagentStop".to_string());
+    doubled_run.timestamp = Some("2026-01-01T09:01:00Z".to_string());
+    scenarios.push((vec![subagent_stop_hook], vec![plain_run, doubled_run]));
+
+    let mut total = 0;
+    for (hooks, records) in &scenarios {
+        let misses = near_misses(hooks, records, &sources);
+        assert!(!misses.is_empty(), "every scenario yields its miss");
+        for miss in &misses {
+            let detail = miss_text(miss, "detail").expect("every miss carries its detail");
+            assert!(!detail.is_empty(), "no detail stands empty");
+            assert!(
+                !detail.contains("no tool"),
+                "no detail names the no tool fallback, found {detail}"
+            );
+            total += 1;
+        }
+    }
+    assert_eq!(total, 8, "the population stands at eight misses");
+}
