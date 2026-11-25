@@ -11,7 +11,7 @@ Hook tooling logs that a hook fired and checks that it is installed, and never j
 - Round 5 lands slice 4, publishing the evidence format hookdoctor-evidence/1, one verdict per configured hook carrying the event and the matcher and the command and the class word a ledger joins on, written beside the two reports when the evidence flag stands and validated by a rebuild that refuses a document differing in any field
 - Round 4 lands slice 3, resolving a hook run record that names no event against the configuration so the record stands as a subject of the one event its hooks subscribe to, and an eventless record carrying replacement input now classifies its hook as firing
 - Round 3 lands the closing slice of the Rust port, carrying the command line whole into the binary and retiring the Python package and suite, proven by a recorded black box battery of 45 invocations beside the standing recordings, so the tree stands Rust whole on both surfaces
-- Closed rounds stand at 46 of 100
+- Closed rounds stand at 47 of 100
 - Round 2 is built on a local branch and awaits its reviews, carrying the duplicate JSON key refusal in every JSON document the tool accepts and the first Rust port slice with the examination carried end to end in the crate and proven by 305 recorded conformance cases against the landed Python
 - Slice 2 is built and proven on synthetic targets only
 - Slice 2 ingests a local Claude Code hooks settings document and local session JSONL files and builds dated trace records for tool calls and outcomes and prompts and hook runs and stop summaries
