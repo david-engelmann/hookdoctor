@@ -124,6 +124,36 @@ fn test_object_pairs_print_in_sorted_order_and_a_repeated_key_prints_both_its_pa
         render_json(&repeated),
         "{\n  \"a\": 2,\n  \"b\": 1,\n  \"b\": 3\n}\n"
     );
+    let wide = JsonValue::object(vec![
+        ("m", JsonValue::Int(0)),
+        ("b", JsonValue::Int(1)),
+        ("m", JsonValue::Int(2)),
+        ("a", JsonValue::Int(3)),
+        ("m", JsonValue::Int(4)),
+        ("z", JsonValue::Int(5)),
+        ("m", JsonValue::Int(6)),
+        ("b", JsonValue::Int(7)),
+        ("m", JsonValue::Int(8)),
+        ("a", JsonValue::Int(9)),
+        ("m", JsonValue::Int(10)),
+        ("q", JsonValue::Int(11)),
+        ("m", JsonValue::Int(12)),
+        ("b", JsonValue::Int(13)),
+        ("m", JsonValue::Int(14)),
+        ("a", JsonValue::Int(15)),
+        ("m", JsonValue::Int(16)),
+        ("z", JsonValue::Int(17)),
+        ("m", JsonValue::Int(18)),
+        ("b", JsonValue::Int(19)),
+        ("m", JsonValue::Int(20)),
+        ("a", JsonValue::Int(21)),
+        ("m", JsonValue::Int(22)),
+        ("q", JsonValue::Int(23)),
+    ]);
+    assert_eq!(
+        render_json(&wide),
+        "{\n  \"a\": 3,\n  \"a\": 9,\n  \"a\": 15,\n  \"a\": 21,\n  \"b\": 1,\n  \"b\": 7,\n  \"b\": 13,\n  \"b\": 19,\n  \"m\": 0,\n  \"m\": 2,\n  \"m\": 4,\n  \"m\": 6,\n  \"m\": 8,\n  \"m\": 10,\n  \"m\": 12,\n  \"m\": 14,\n  \"m\": 16,\n  \"m\": 18,\n  \"m\": 20,\n  \"m\": 22,\n  \"q\": 11,\n  \"q\": 23,\n  \"z\": 5,\n  \"z\": 17\n}\n"
+    );
 }
 
 #[test]
