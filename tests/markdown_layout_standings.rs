@@ -167,6 +167,7 @@ fn test_a_count_reads_as_the_integer_itself_where_it_stands_as_an_integer_and_as
                     JsonValue::object(vec![
                         ("denial", text("x")),
                         ("modification", JsonValue::Int(4)),
+                        ("consumed_output", JsonValue::BigInt("42".to_string())),
                     ]),
                 ),
                 ("first_ran_at", JsonValue::Int(7)),
