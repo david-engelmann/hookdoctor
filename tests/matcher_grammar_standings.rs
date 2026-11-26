@@ -437,3 +437,204 @@ fn test_the_engine_stands_behind_its_four_doors_with_the_one_refusal_and_the_rep
     assert!(pattern_compiles("(a{1000}){1000}"));
     assert!(bad("(a{10000}){10000}"));
 }
+
+#[test]
+fn test_the_bare_comma_counted_form_reads_as_zero_or_more_with_its_lazy_and_possessive_and_literal_edges(
+) {
+    // The bare comma form in braces reads as zero for its low
+    // bound with no high bound, matching zero or more copies.
+    assert!(m("a{,}", ""));
+    assert!(m("a{,}", "a"));
+    assert!(m("a{,}", "aaa"));
+    assert!(!m("a{,}", "b"));
+    assert!(!m("a{,}", "a{,}"));
+    assert!(m("a{,}b", "b"));
+    assert!(m("a{,}b", "ab"));
+    assert!(m("a{,}b", "aaab"));
+    assert!(!m("a{,}b", "aaac"));
+    // It binds whole to groups, character classes, and escapes.
+    assert!(m("(ab){,}", ""));
+    assert!(m("(ab){,}", "abab"));
+    assert!(!m("(ab){,}", "aba"));
+    assert!(m("[ab]{,}", ""));
+    assert!(m("[ab]{,}", "abba"));
+    assert!(!m("[ab]{,}", "abc"));
+    assert!(m("\\d{,}", ""));
+    assert!(m("\\d{,}", "42"));
+    assert!(!m("\\d{,}", "4a"));
+    // The lazy suffix reads as the same plain form under MG-4.
+    assert!(m("a{,}?", ""));
+    assert!(m("a{,}?", "a"));
+    assert!(m("a{,}?", "aaa"));
+    assert!(m("a{,}?b", "b"));
+    assert!(m("a{,}?b", "ab"));
+    assert!(m("a{,}?b", "aaab"));
+    assert!(!m("a{,}?", "a{,}?"));
+    // The possessive suffix refuses with InvalidPattern under RFIX-2.
+    assert_eq!(compile("a{,}+").unwrap_err(), InvalidPattern);
+    assert!(!pattern_compiles("(ab){,}+"));
+    // Standing with no repeatable atom ahead of it, behind an
+    // assertion, behind a quantified atom, or ahead of a chained
+    // quantifier refuses with InvalidPattern under MG-5.
+    let refused_seats = [
+        "{,}", "{,}a", "a|{,}", "({,}a)", "(?:{,}a)", "^{,}", "${,}", "\\A{,}", "\\Z{,}", "\\b{,}",
+        "\\B{,}", "a*{,}", "a{,}*", "a{,}??", "a{,}{,}", "a{,}{2}",
+    ];
+    for seat in refused_seats {
+        assert_eq!(compile(seat).unwrap_err(), InvalidPattern, "seat {seat}");
+    }
+    // Braces carrying no closing brace, whitespace, a second comma,
+    // a non ASCII digit, or any character outside ASCII digits and
+    // the single comma open no counted spec, so the opening brace
+    // reads as literal '{' and parsing resumes behind it.
+    let literals = [
+        "{,",
+        "a{,",
+        "a{ ,}",
+        "a{, }",
+        "a{ , }",
+        "a{,,}",
+        "a{,a}",
+        "a{a,}",
+        "a{,\u{0663}}",
+        "a{\u{0663},}",
+        "{ ,}",
+        "{,,}",
+    ];
+    for literal in literals {
+        assert!(m(literal, literal), "literal {literal}");
+        assert!(!m(literal, ""), "empty {literal}");
+        assert!(!m(literal, "a"), "single {literal}");
+    }
+    assert_eq!(fullmatch("a{,*}", "a{}"), Ok(true));
+    assert_eq!(fullmatch("a{,*}", "a{,,,}"), Ok(true));
+    assert_eq!(fullmatch("a{,*}", "a{,*}"), Ok(false));
+    assert_eq!(compile("a{,[}").unwrap_err(), InvalidPattern);
+    // The RFIX-3 expansion ceiling of 1,000,000 instructions at the
+    // bare comma form, contributing body + 2 instructions as '*' does.
+    assert!(pattern_compiles("(a{10000}){,}"));
+    assert!(pattern_compiles("((a{1000}){999}a{998}){,}"));
+    assert_eq!(
+        compile("((a{1000}){999}a{999}){,}").unwrap_err(),
+        InvalidPattern
+    );
+}
+
+#[test]
+fn test_a_leading_closing_bracket_in_a_class_stands_outside_the_range_loop_at_both_negation_standings(
+) {
+    // An unescaped closing bracket standing first in a class is
+    // consumed ahead of the range loop, so []-] holds ']' and '-',
+    // and []-a] holds the three literal items ']' (0x5D), '-' (0x2D),
+    // and 'a' (0x61) rather than the ASCII range 0x5D..=0x61.
+    assert!(m("[]-]", "]"));
+    assert!(m("[]-]", "-"));
+    assert!(!m("[]-]", "^"));
+    assert!(!m("[]-]", "a"));
+    assert!(!m("[^]-]", "]"));
+    assert!(!m("[^]-]", "-"));
+    assert!(m("[^]-]", "^"));
+    assert!(m("[^]-]", "a"));
+    assert!(!m("[]-a]", "\x5c"));
+    assert!(m("[]-a]", "]"));
+    assert!(!m("[]-a]", "^"));
+    assert!(!m("[]-a]", "_"));
+    assert!(!m("[]-a]", "`"));
+    assert!(m("[]-a]", "a"));
+    assert!(!m("[]-a]", "b"));
+    assert!(m("[]-a]", "-"));
+    // Under negation [^]-a] turns that exact three item set.
+    assert!(m("[^]-a]", "\x5c"));
+    assert!(!m("[^]-a]", "]"));
+    assert!(m("[^]-a]", "^"));
+    assert!(m("[^]-a]", "_"));
+    assert!(m("[^]-a]", "`"));
+    assert!(!m("[^]-a]", "a"));
+    assert!(m("[^]-a]", "b"));
+    assert!(!m("[^]-a]", "-"));
+    // With uppercase 'A' (0x41 < 0x5D) behind the dash, []-A] and
+    // [^]-A] compile as literal items rather than refusing as a
+    // reversed range.
+    assert!(m("[]-A]", "]"));
+    assert!(m("[]-A]", "-"));
+    assert!(m("[]-A]", "A"));
+    assert!(!m("[]-A]", "^"));
+    assert!(!m("[^]-A]", "]"));
+    assert!(!m("[^]-A]", "-"));
+    assert!(!m("[^]-A]", "A"));
+    assert!(m("[^]-A]", "^"));
+    // Behind an unescaped leading ']' and first '-', a second '-'
+    // ahead of closing ']' yields literal ']' and '-', whereas a
+    // second '-' ahead of a high character forms range 0x2D..=high
+    // at both negation standings and refuses when reversed or escaped.
+    assert!(m("[]--]", "]"));
+    assert!(m("[]--]", "-"));
+    assert!(!m("[]--]", "\x2c"));
+    assert!(!m("[]--]", "0"));
+    assert!(!m("[]--]", "^"));
+    assert!(!m("[]--]", "a"));
+    assert!(!m("[]--a]", "\x2c"));
+    assert!(m("[]--a]", "-"));
+    assert!(m("[]--a]", "0"));
+    assert!(m("[]--a]", "A"));
+    assert!(m("[]--a]", "\x5c"));
+    assert!(m("[]--a]", "]"));
+    assert!(m("[]--a]", "^"));
+    assert!(m("[]--a]", "a"));
+    assert!(!m("[]--a]", "b"));
+    assert!(m("[^]--a]", "\x2c"));
+    assert!(!m("[^]--a]", "-"));
+    assert!(!m("[^]--a]", "0"));
+    assert!(!m("[^]--a]", "]"));
+    assert!(!m("[^]--a]", "^"));
+    assert!(!m("[^]--a]", "a"));
+    assert!(m("[^]--a]", "b"));
+    assert_eq!(compile("[]--,]").unwrap_err(), InvalidPattern);
+    assert_eq!(compile("[]--!]").unwrap_err(), InvalidPattern);
+    assert_eq!(compile("[]--\\d]").unwrap_err(), InvalidPattern);
+    // By contrast, an escaped closing bracket at a low item seat
+    // enters the range loop as 0x5D, forming range 0x5D..=0x61 at
+    // both negation standings and refusing when reversed or followed
+    // by a class escape, while an escaped closing bracket consumed
+    // as a high endpoint leaves a following '-' at its own low seat.
+    assert!(!m("[\\]-a]", "\x5c"));
+    assert!(m("[\\]-a]", "]"));
+    assert!(m("[\\]-a]", "^"));
+    assert!(m("[\\]-a]", "_"));
+    assert!(m("[\\]-a]", "`"));
+    assert!(m("[\\]-a]", "a"));
+    assert!(!m("[\\]-a]", "b"));
+    assert!(!m("[\\]-a]", "-"));
+    assert!(m("[^\\]-a]", "\x5c"));
+    assert!(!m("[^\\]-a]", "]"));
+    assert!(!m("[^\\]-a]", "^"));
+    assert!(!m("[^\\]-a]", "_"));
+    assert!(!m("[^\\]-a]", "`"));
+    assert!(!m("[^\\]-a]", "a"));
+    assert!(m("[^\\]-a]", "b"));
+    assert!(m("[^\\]-a]", "-"));
+    assert_eq!(compile("[\\]-A]").unwrap_err(), InvalidPattern);
+    assert_eq!(compile("[^\\]-A]").unwrap_err(), InvalidPattern);
+    assert_eq!(compile("[\\]-\\d]").unwrap_err(), InvalidPattern);
+    assert!(!m("[A-\\]]", "@"));
+    assert!(m("[A-\\]]", "A"));
+    assert!(m("[A-\\]]", "Z"));
+    assert!(m("[A-\\]]", "\x5c"));
+    assert!(m("[A-\\]]", "]"));
+    assert!(!m("[A-\\]]", "^"));
+    assert!(m("[^A-\\]]", "@"));
+    assert!(!m("[^A-\\]]", "A"));
+    assert!(!m("[^A-\\]]", "]"));
+    assert!(m("[^A-\\]]", "^"));
+    assert_eq!(compile("[a-\\]]").unwrap_err(), InvalidPattern);
+    assert!(m("[A-\\]-A]", "A"));
+    assert!(m("[A-\\]-A]", "Z"));
+    assert!(m("[A-\\]-A]", "]"));
+    assert!(m("[A-\\]-A]", "-"));
+    assert!(!m("[A-\\]-A]", "^"));
+    assert!(m("[X-\\]-a]", "X"));
+    assert!(m("[X-\\]-a]", "]"));
+    assert!(m("[X-\\]-a]", "-"));
+    assert!(m("[X-\\]-a]", "a"));
+    assert!(!m("[X-\\]-a]", "^"));
+}

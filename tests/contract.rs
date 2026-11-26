@@ -147,3 +147,245 @@ fn test_contract_has_no_forbidden_dashes() {
         assert!(!text.contains('\u{2013}'), "{rel} carries no en dash");
     }
 }
+
+fn commonmark_lines(text: &str) -> Vec<&str> {
+    let bytes = text.as_bytes();
+    let mut out = Vec::new();
+    let mut start = 0;
+    let mut idx = 0;
+    while idx < bytes.len() {
+        match bytes[idx] {
+            b'\r' => {
+                out.push(&text[start..idx]);
+                idx += if bytes.get(idx + 1) == Some(&b'\n') {
+                    2
+                } else {
+                    1
+                };
+                start = idx;
+            }
+            b'\n' => {
+                out.push(&text[start..idx]);
+                idx += 1;
+                start = idx;
+            }
+            _ => idx += 1,
+        }
+    }
+    if start < bytes.len() {
+        out.push(&text[start..]);
+    }
+    out
+}
+
+fn prose_typography_violations(label: &str, text: &str) -> Vec<String> {
+    let mut violations = Vec::new();
+    let mut fence_ticks: Option<usize> = None;
+    for (idx, line) in commonmark_lines(text).into_iter().enumerate() {
+        let line_no = idx + 1;
+        if line.contains('\u{2014}') {
+            violations.push(format!("{label}:{line_no} carries an em dash"));
+        }
+        if line.contains('\u{2013}') {
+            violations.push(format!("{label}:{line_no} carries an en dash"));
+        }
+        let leading_spaces = line.bytes().take_while(|&b| b == b' ').count();
+        let rest = &line[leading_spaces..];
+        if let Some(open_ticks) = fence_ticks {
+            if leading_spaces <= 3 {
+                let ticks = rest.bytes().take_while(|&b| b == b'`').count();
+                if ticks >= open_ticks && rest[ticks..].bytes().all(|b| b == b' ' || b == b'\t') {
+                    fence_ticks = None;
+                }
+            }
+            continue;
+        }
+        if leading_spaces <= 3 {
+            let ticks = rest.bytes().take_while(|&b| b == b'`').count();
+            if ticks >= 3 && !rest[ticks..].contains('`') {
+                fence_ticks = Some(ticks);
+                continue;
+            }
+        }
+        if line.trim().is_empty() {
+            continue;
+        }
+        if leading_spaces <= 3 {
+            let hashes = rest.bytes().take_while(|&b| b == b'#').count();
+            if (1..=6).contains(&hashes)
+                && matches!(rest.as_bytes().get(hashes), None | Some(b' ') | Some(b'\t'))
+            {
+                continue;
+            }
+        }
+        if line.contains(':') {
+            violations.push(format!("{label}:{line_no} carries a prose colon"));
+        }
+        if line.contains(';') {
+            violations.push(format!("{label}:{line_no} carries a prose semicolon"));
+        }
+    }
+    if fence_ticks.is_some() {
+        violations.push(format!("{label} carries an unclosed code fence"));
+    }
+    violations
+}
+
+#[test]
+fn test_prose_carries_no_forbidden_dashes_or_colons_or_semicolons() {
+    // Prove the helper discriminates on synthetic clean and violating texts,
+    // including CommonMark ATX heading, code fence, indentation, and EOF rules.
+    let clean = "\
+# Heading: colons and; semicolons outside prose
+   ###### Level six:\tallowed in heading
+##
+
+Plain contract prose stands here with no forbidden marks.
+   \t  
+- TP-1 Bullet prose also stands clean here.
+
+```rust
+let allowed: usize = 1;
+```
+
+   ````md
+```
+still_inside_four_tick_fence: allowed;
+```
+    ````
+   ````\t 
+";
+    assert!(
+        prose_typography_violations("synthetic-clean", clean).is_empty(),
+        "clean markdown passes"
+    );
+
+    let cases = [
+        (
+            "synthetic-colon",
+            "Two corrections stand on counted figures: the word None stands here.\n",
+            "synthetic-colon:1 carries a prose colon",
+        ),
+        (
+            "synthetic-bullet-colon",
+            "- TP-2 Prose bullet: carries a forbidden colon.\n",
+            "synthetic-bullet-colon:1 carries a prose colon",
+        ),
+        (
+            "synthetic-nested-bullet-colon",
+            "    - nested: fails\n",
+            "synthetic-nested-bullet-colon:1 carries a prose colon",
+        ),
+        (
+            "synthetic-tab-indented-semicolon",
+            "\tindented_prose; fails\n",
+            "synthetic-tab-indented-semicolon:1 carries a prose semicolon",
+        ),
+        (
+            "synthetic-semicolon",
+            "The examination stands unchanged in its readings; what changes is the shell.\n",
+            "synthetic-semicolon:1 carries a prose semicolon",
+        ),
+        (
+            "synthetic-after-closed-fence-colon",
+            "```\nallowed: 1;\n```\nAfter closed fence: fails.\n",
+            "synthetic-after-closed-fence-colon:4 carries a prose colon",
+        ),
+        (
+            "synthetic-after-closed-fence-semicolon",
+            "```\nallowed: 1;\n```\nAfter closed fence; fails.\n",
+            "synthetic-after-closed-fence-semicolon:4 carries a prose semicolon",
+        ),
+        (
+            "synthetic-four-tick-after-close",
+            "````\n```\ninside: allowed;\n````\noutside: fails\n",
+            "synthetic-four-tick-after-close:5 carries a prose colon",
+        ),
+        (
+            "synthetic-four-tick-inner-three-unclosed",
+            "````\n```\n",
+            "synthetic-four-tick-inner-three-unclosed carries an unclosed code fence",
+        ),
+        (
+            "synthetic-four-space-ticks-no-fence",
+            "    ```\nfollowing prose: fails.\n",
+            "synthetic-four-space-ticks-no-fence:2 carries a prose colon",
+        ),
+        (
+            "synthetic-unclosed-fence",
+            "```rust\nlet allowed: usize = 1;\n",
+            "synthetic-unclosed-fence carries an unclosed code fence",
+        ),
+        (
+            "synthetic-inline-ticks",
+            "```inline```: trailing prose colon still fails.\n",
+            "synthetic-inline-ticks:1 carries a prose colon",
+        ),
+        (
+            "synthetic-hash-no-space",
+            "#1 not a heading: fails\n",
+            "synthetic-hash-no-space:1 carries a prose colon",
+        ),
+        (
+            "synthetic-seven-hashes",
+            "####### seven hashes: fails\n",
+            "synthetic-seven-hashes:1 carries a prose colon",
+        ),
+        (
+            "synthetic-four-space-hash",
+            "    # four spaces before hash: fails\n",
+            "synthetic-four-space-hash:1 carries a prose colon",
+        ),
+        (
+            "synthetic-em-dash",
+            "A sentence \u{2014} with an em dash fails.\n",
+            "synthetic-em-dash:1 carries an em dash",
+        ),
+        (
+            "synthetic-fenced-em-dash",
+            "```\n\u{2014}\n```\n",
+            "synthetic-fenced-em-dash:2 carries an em dash",
+        ),
+        (
+            "synthetic-en-dash",
+            "# Heading 1\u{2013}5 with an en dash fails\n",
+            "synthetic-en-dash:1 carries an en dash",
+        ),
+        (
+            "synthetic-lone-cr-after-heading",
+            "# Heading\rForbidden: prose\r",
+            "synthetic-lone-cr-after-heading:2 carries a prose colon",
+        ),
+        (
+            "synthetic-crlf-after-heading",
+            "# Heading\r\nForbidden; prose\r\n",
+            "synthetic-crlf-after-heading:2 carries a prose semicolon",
+        ),
+    ];
+    for (name, sample, expected) in cases {
+        let found = prose_typography_violations(name, sample);
+        assert!(
+            found.iter().any(|msg| msg == expected),
+            "case {name} must fail with {expected}, got {found:?}"
+        );
+    }
+    assert_eq!(
+        prose_typography_violations(
+            "synthetic-four-space-ticks-exact",
+            "    ```\nfollowing prose: fails.\n"
+        ),
+        vec!["synthetic-four-space-ticks-exact:2 carries a prose colon"]
+    );
+
+    for rel in ["CONTRACT.md", "README.md"] {
+        let text = read(rel);
+        let found = prose_typography_violations(rel, &text);
+        assert!(
+            found.is_empty(),
+            "{rel} carries typography violations: {found:?}"
+        );
+    }
+    let agents = read("AGENTS.md");
+    assert!(!agents.contains('\u{2014}'), "AGENTS.md carries no em dash");
+    assert!(!agents.contains('\u{2013}'), "AGENTS.md carries no en dash");
+}
