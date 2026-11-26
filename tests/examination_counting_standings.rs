@@ -136,6 +136,63 @@ fn test_a_stop_subject_counts_as_matched_for_every_stop_hook_and_as_ran_only_for
     assert_eq!(matched_ran(e), (1, 1));
     assert_eq!(effects_of(e), (0, 0, 0));
     assert_eq!(class_of(e), "firing-without-effect");
+
+    // A stop record naming another command with
+    // continuation prevented and output standing stands
+    // matched for every stop hook and ran for none of
+    // them, its effects standing counted at nothing and
+    // its class standing silent, the sums of an entry
+    // standing over its ran subjects alone.
+    let stop_hook = hook("Stop", None, "stopper.sh");
+    let mut other_hook = hook("Stop", None, "sweeper.sh");
+    other_hook.id = "Stop:1:0".to_string();
+    let mut flagged = record("stop", 1);
+    flagged.commands = vec!["other.sh".to_string()];
+    flagged.prevented_continuation = true;
+    flagged.has_output = true;
+    let (entries, _) = examine_hooks(
+        &[stop_hook.clone(), other_hook],
+        &[flagged],
+        None,
+        None,
+        &[],
+    )
+    .unwrap();
+    for id in ["Stop:0:0", "Stop:1:0"] {
+        let e = entry(&entries, id);
+        assert_eq!(matched_ran(e), (1, 0));
+        assert_eq!(class_of(e), "silent");
+        assert_eq!(effects_of(e), (0, 0, 0));
+    }
+
+    // A stop record naming the command second among two
+    // commands stands ran for the hook, the naming
+    // standing at any place in the list, with its
+    // counts standing as the single command cells
+    // carry them.
+    let mut second = record("stop", 1);
+    second.commands = vec!["other.sh".to_string(), "stopper.sh".to_string()];
+    second.prevented_continuation = true;
+    second.has_output = true;
+    let (entries, _) = examine_hooks(&[stop_hook.clone()], &[second], None, None, &[]).unwrap();
+    let e = entry(&entries, "Stop:0:0");
+    assert_eq!(matched_ran(e), (1, 1));
+    assert_eq!(effects_of(e), (1, 0, 1));
+    assert_eq!(class_of(e), "firing");
+
+    // A stop record naming the command with output
+    // standing alone counts consumed output alone and
+    // stands firing on that kind alone, the class
+    // standing decided by the total over the three
+    // kinds and not by the denial count alone.
+    let mut output = record("stop", 1);
+    output.commands = vec!["stopper.sh".to_string()];
+    output.has_output = true;
+    let (entries, _) = examine_hooks(&[stop_hook], &[output], None, None, &[]).unwrap();
+    let e = entry(&entries, "Stop:0:0");
+    assert_eq!(matched_ran(e), (1, 1));
+    assert_eq!(effects_of(e), (0, 0, 1));
+    assert_eq!(class_of(e), "firing");
 }
 
 #[test]
@@ -263,4 +320,7 @@ fn test_a_window_bound_that_does_not_read_as_an_instant_refuses_with_the_wording
     assert_eq!(err.message(), "the window end is not a timestamp");
     let err = unconfigured_runs(&[any_hook], &[], Some("junk"), None, &[]).unwrap_err();
     assert_eq!(err.message(), "the window start is not a timestamp");
+    let any_hook = hook("Stop", None, "stopper.sh");
+    let err = unconfigured_runs(&[any_hook], &[], None, Some("junk"), &[]).unwrap_err();
+    assert_eq!(err.message(), "the window end is not a timestamp");
 }
