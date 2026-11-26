@@ -209,6 +209,25 @@ fn test_a_class_reads_by_its_items_and_ranges_and_negation_with_the_dash_and_the
     assert!(m("[\\]]", "]"));
     assert!(m("[\\\\]", "\\"));
     assert!(m("[\\-]", "-"));
+    // A repetition standing after a class binds to the class
+    // whole, at the marks and at a counted form alike.
+    assert!(m("[abc]+", "abca"));
+    assert!(!m("[abc]+", ""));
+    assert!(!m("[abc]+", "abcd"));
+    assert!(m("[a-z]*", ""));
+    assert!(m("[a-z]*", "mz"));
+    assert!(!m("[a-z]*", "mZ"));
+    assert!(m("[^abc]+", "xyz"));
+    assert!(!m("[^abc]+", "xya"));
+    assert!(m("[abc]{2}", "ab"));
+    assert!(!m("[abc]{2}", "a"));
+    assert!(m("[\\d]+", "123"));
+    assert!(!m("[\\d]+", "12a"));
+    assert!(m("[abc]+?", "ab"));
+    // A negated class takes a newline, the class reading
+    // carrying no newline parting where the dot carries one.
+    assert!(m("[^a]", "\n"));
+    assert!(!m("[^a]", "a"));
 }
 
 #[test]
@@ -245,6 +264,19 @@ fn test_the_dot_takes_any_character_but_a_newline_and_the_anchors_and_boundaries
     assert!(!m(".", "\n"));
     assert!(m(".", "\r"));
     assert!(!m(".", ""));
+    // A repetition standing after the dot binds to the dot
+    // whole, the newline parting standing at every count.
+    assert!(m(".*", "abc"));
+    assert!(m(".*", ""));
+    assert!(!m(".*", "a\nb"));
+    assert!(m(".+", "ab"));
+    assert!(!m(".+", ""));
+    assert!(m(".{2}", "ab"));
+    assert!(!m(".{2}", "a"));
+    assert!(!m(".{2}", "a\n"));
+    assert!(m(".?", "x"));
+    assert!(!m(".?", "\n"));
+    assert!(m(".+?", "ab"));
     // The caret and the dollar stand as the start and end
     // assertions of the whole text at any seat.
     assert!(m("^a", "a"));
@@ -283,6 +315,8 @@ fn test_the_digit_and_word_and_space_readings_and_the_escape_family_stand_at_the
     assert!(!m("\\d", "\u{b2}"));
     assert!(m("\\D", "\u{b2}"));
     assert!(m("\\d", "5"));
+    assert!(m("\\d", "9"));
+    assert!(!m("\\D", "9"));
     // The word reading, alphanumeric over Unicode or the
     // underscore.
     assert!(m("\\w", "é"));
@@ -297,6 +331,8 @@ fn test_the_digit_and_word_and_space_readings_and_the_escape_family_stand_at_the
     assert!(m("\\s", " "));
     assert!(!m("\\S", "\u{1c}"));
     assert!(!m("\\s", "x"));
+    assert!(m("\\s", "\u{1f}"));
+    assert!(!m("\\S", "\u{1f}"));
     // The named control escapes read as the characters they
     // name.
     assert!(m("\\n", "\n"));
@@ -333,6 +369,22 @@ fn test_the_digit_and_word_and_space_readings_and_the_escape_family_stand_at_the
     assert!(m("\\.", "."));
     assert!(m("\\\\", "\\"));
     assert!(m("\\-", "-"));
+    // A repetition standing after an escape binds to the
+    // escape whole, at the marks and at a counted form alike.
+    assert!(m("\\d+", "123"));
+    assert!(!m("\\d+", ""));
+    assert!(!m("\\d+", "12a"));
+    assert!(m("\\d{2}", "42"));
+    assert!(!m("\\d{2}", "4"));
+    assert!(m("\\w*", ""));
+    assert!(m("\\w*", "a_1"));
+    assert!(!m("\\w*", "a-1"));
+    assert!(m("\\s+", " \t"));
+    assert!(m("\\S+", "abc"));
+    assert!(!m("\\S+", "a b"));
+    assert!(m("\\n+", "\n\n"));
+    assert!(m("\\x41+", "AA"));
+    assert!(m("\\d+?", "12"));
     assert!(bad("\\"));
 }
 
