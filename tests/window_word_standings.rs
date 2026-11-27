@@ -216,6 +216,207 @@ fn test_a_window_word_carrying_a_raw_byte_at_the_separator_seat_reads_and_spells
         Some("2025-12-31\u{FFFD}00:00:00Z"),
         "the one sequence stands as the one replacement character"
     );
+
+    let trunc3_start_cell = cell_dir(&pin, "trunc3-start");
+    let output = run_report(
+        &trunc3_start_cell,
+        &[("--window-start", byte_word(b"2025-12-31\xe2\x8200:00:00Z"))],
+    );
+    assert_eq!(
+        output.status.code(),
+        Some(0),
+        "a truncated three byte sequence at the separator seat reads as the one character"
+    );
+    assert!(output.stderr.is_empty(), "the reading stands in silence");
+    assert_eq!(
+        window_bound(&trunc3_start_cell, "start").as_deref(),
+        Some("2025-12-31\u{FFFD}00:00:00Z"),
+        "the truncated sequence stands as the one replacement character"
+    );
+
+    let trunc4_start_cell = cell_dir(&pin, "trunc4-start");
+    let output = run_report(
+        &trunc4_start_cell,
+        &[(
+            "--window-start",
+            byte_word(b"2025-12-31\xf0\x9f\x9800:00:00Z"),
+        )],
+    );
+    assert_eq!(
+        output.status.code(),
+        Some(0),
+        "a truncated four byte sequence at the separator seat reads as the one character"
+    );
+    assert!(output.stderr.is_empty(), "the reading stands in silence");
+    assert_eq!(
+        window_bound(&trunc4_start_cell, "start").as_deref(),
+        Some("2025-12-31\u{FFFD}00:00:00Z"),
+        "the truncated sequence stands as the one replacement character"
+    );
+
+    let lead3_start_cell = cell_dir(&pin, "lead3-start");
+    let output = run_report(
+        &lead3_start_cell,
+        &[("--window-start", byte_word(b"2025-12-31\xe200:00:00Z"))],
+    );
+    assert_eq!(
+        output.status.code(),
+        Some(0),
+        "a lone three byte lead at the separator seat reads as the one character"
+    );
+    assert!(output.stderr.is_empty(), "the reading stands in silence");
+    assert_eq!(
+        window_bound(&lead3_start_cell, "start").as_deref(),
+        Some("2025-12-31\u{FFFD}00:00:00Z"),
+        "the lone lead stands as the one replacement character"
+    );
+
+    let trunc3_end_cell = cell_dir(&pin, "trunc3-end");
+    let output = run_report(
+        &trunc3_end_cell,
+        &[
+            ("--window-start", text_word("2025-01-01T00:00:00Z")),
+            ("--window-end", byte_word(b"2027-01-01\xe2\x8200:00:00Z")),
+        ],
+    );
+    assert_eq!(
+        output.status.code(),
+        Some(0),
+        "a truncated sequence at the separator seat of the end word reads as the one character"
+    );
+    assert!(output.stderr.is_empty(), "the reading stands in silence");
+    assert_eq!(
+        window_bound(&trunc3_end_cell, "end").as_deref(),
+        Some("2027-01-01\u{FFFD}00:00:00Z"),
+        "the end bound stands spelled with the replacement character at that seat"
+    );
+
+    let week_ext_cell = cell_dir(&pin, "week-ext");
+    let output = run_report(
+        &week_ext_cell,
+        &[("--window-start", byte_word(b"2026-W01-1\xff00:00:00Z"))],
+    );
+    assert_eq!(
+        output.status.code(),
+        Some(0),
+        "a raw byte at the separator seat of the week extended form reads"
+    );
+    assert!(output.stderr.is_empty(), "the reading stands in silence");
+    assert_eq!(
+        window_bound(&week_ext_cell, "start").as_deref(),
+        Some("2026-W01-1\u{FFFD}00:00:00Z"),
+        "the bound stands spelled with the replacement character at that seat"
+    );
+
+    let week_basic_cell = cell_dir(&pin, "week-basic");
+    let output = run_report(
+        &week_basic_cell,
+        &[("--window-start", byte_word(b"2026W011\xff00:00:00Z"))],
+    );
+    assert_eq!(
+        output.status.code(),
+        Some(0),
+        "a raw byte at the separator seat of the week basic form reads"
+    );
+    assert!(output.stderr.is_empty(), "the reading stands in silence");
+    assert_eq!(
+        window_bound(&week_basic_cell, "start").as_deref(),
+        Some("2026W011\u{FFFD}00:00:00Z"),
+        "the bound stands spelled with the replacement character at that seat"
+    );
+
+    let week_bare_cell = cell_dir(&pin, "week-bare");
+    let output = run_report(
+        &week_bare_cell,
+        &[("--window-start", byte_word(b"2026W01\xff00:00:00Z"))],
+    );
+    assert_eq!(
+        output.status.code(),
+        Some(0),
+        "a raw byte at the separator seat of the bare week form reads"
+    );
+    assert!(output.stderr.is_empty(), "the reading stands in silence");
+    assert_eq!(
+        window_bound(&week_bare_cell, "start").as_deref(),
+        Some("2026W01\u{FFFD}00:00:00Z"),
+        "the bound stands spelled with the replacement character at that seat"
+    );
+
+    let cal_basic_cell = cell_dir(&pin, "cal-basic");
+    let output = run_report(
+        &cal_basic_cell,
+        &[("--window-start", byte_word(b"20251231\xff000000Z"))],
+    );
+    assert_eq!(
+        output.status.code(),
+        Some(0),
+        "a raw byte at the separator seat of the calendar basic form reads"
+    );
+    assert!(output.stderr.is_empty(), "the reading stands in silence");
+    assert_eq!(
+        window_bound(&cal_basic_cell, "start").as_deref(),
+        Some("20251231\u{FFFD}000000Z"),
+        "the bound stands spelled with the replacement character at that seat"
+    );
+
+    let offset_tail_cell = cell_dir(&pin, "offset-tail");
+    let output = run_report(
+        &offset_tail_cell,
+        &[("--window-start", byte_word(b"2025-12-31\xff00:00:00+01:00"))],
+    );
+    assert_eq!(
+        output.status.code(),
+        Some(0),
+        "a raw byte at the separator seat reads with an offset tail standing"
+    );
+    assert!(output.stderr.is_empty(), "the reading stands in silence");
+    assert_eq!(
+        window_bound(&offset_tail_cell, "start").as_deref(),
+        Some("2025-12-31\u{FFFD}00:00:00+01:00"),
+        "the bound stands spelled with the replacement character at that seat"
+    );
+
+    let lowered_zed_cell = cell_dir(&pin, "lowered-zed");
+    let output = run_report(
+        &lowered_zed_cell,
+        &[("--window-start", byte_word(b"2025-12-31\xff00:00:00z"))],
+    );
+    assert_eq!(
+        output.status.code(),
+        Some(0),
+        "a raw byte at the separator seat reads with a lowered zed tail standing"
+    );
+    assert!(output.stderr.is_empty(), "the reading stands in silence");
+    assert_eq!(
+        window_bound(&lowered_zed_cell, "start").as_deref(),
+        Some("2025-12-31\u{FFFD}00:00:00z"),
+        "the bound stands spelled with the replacement character at that seat"
+    );
+
+    let both_words_cell = cell_dir(&pin, "both-words");
+    let output = run_report(
+        &both_words_cell,
+        &[
+            ("--window-start", byte_word(b"2025-12-31\xff00:00:00Z")),
+            ("--window-end", byte_word(b"2027-01-01\xff00:00:00Z")),
+        ],
+    );
+    assert_eq!(
+        output.status.code(),
+        Some(0),
+        "both window words carrying a raw byte at the separator seat read together"
+    );
+    assert!(output.stderr.is_empty(), "the reading stands in silence");
+    assert_eq!(
+        window_bound(&both_words_cell, "start").as_deref(),
+        Some("2025-12-31\u{FFFD}00:00:00Z"),
+        "the start bound stands spelled with the replacement character at that seat"
+    );
+    assert_eq!(
+        window_bound(&both_words_cell, "end").as_deref(),
+        Some("2027-01-01\u{FFFD}00:00:00Z"),
+        "the end bound stands spelled with the replacement character at that seat"
+    );
     std::fs::remove_dir_all(&pin).expect("a pin directory clears");
 }
 
@@ -304,6 +505,20 @@ fn test_a_window_word_carrying_a_raw_byte_at_a_strict_seat_refuses_in_the_wordin
         )],
     );
     assert_refused(&output, &stray_cell, "the window start is not a timestamp");
+
+    let end_digit_cell = cell_dir(&pin, "end-digit");
+    let output = run_report(
+        &end_digit_cell,
+        &[
+            ("--window-start", text_word("2025-01-01T00:00:00Z")),
+            ("--window-end", byte_word(b"2027-01-0\xffT00:00:00Z")),
+        ],
+    );
+    assert_refused(
+        &output,
+        &end_digit_cell,
+        "the window end is not a timestamp",
+    );
     std::fs::remove_dir_all(&pin).expect("a pin directory clears");
 }
 
