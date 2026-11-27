@@ -267,6 +267,19 @@ fn test_a_window_refusal_fires_ahead_of_every_matcher_refusal_at_the_counting_se
         examination_refusal(&[bad_hook], &[tool_call(1)], None, None),
         "a matcher is not a valid pattern"
     );
+    let post_hook = hook("PostToolUse", Some("["), "guard.sh");
+    assert_eq!(
+        examination_refusal(&[post_hook.clone()], &[tool_call(1)], Some("junk"), None),
+        "the window start is not a timestamp"
+    );
+    assert_eq!(
+        examination_refusal(&[post_hook.clone()], &[tool_call(1)], None, Some("junk2")),
+        "the window end is not a timestamp"
+    );
+    assert_eq!(
+        examination_refusal(&[post_hook], &[tool_call(1)], None, None),
+        "a matcher is not a valid pattern"
+    );
 }
 
 #[test]
@@ -297,6 +310,44 @@ fn test_the_report_building_takes_the_examination_walk_ahead_of_the_unconfigured
         None,
     )
     .expect_err("the validation refuses the call");
+    assert_eq!(err.message(), "the window start is not a timestamp");
+    let err = validate_report(
+        &supplied,
+        &[stop_hook.clone()],
+        &[],
+        "cfg",
+        &[],
+        None,
+        Some("junk2"),
+    )
+    .expect_err("the validation refuses the call");
+    assert_eq!(err.message(), "the window end is not a timestamp");
+    let err = validate_evidence(
+        &supplied,
+        &[stop_hook.clone()],
+        &[],
+        Some("junk"),
+        Some("junk2"),
+    )
+    .expect_err("the validation refuses the call");
+    assert_eq!(err.message(), "the window start is not a timestamp");
+    let err = hookdoctor::examine::validate_markdown(
+        b"{}",
+        &[stop_hook.clone()],
+        &[],
+        "cfg",
+        &[],
+        Some("junk"),
+        None,
+    )
+    .expect_err("the validation refuses the call");
+    assert_eq!(err.message(), "the window start is not a timestamp");
+    let err = build_report(&[stop_hook.clone()], &[], "cfg", &[], Some("junk"), None)
+        .expect_err("the report building refuses the call");
+    assert_eq!(err.message(), "the window start is not a timestamp");
+    let err =
+        hookdoctor::examine::build_evidence(&[stop_hook.clone()], &[], Some("junk"), Some("junk2"))
+            .expect_err("the evidence building refuses the call");
     assert_eq!(err.message(), "the window start is not a timestamp");
     let err = validate_evidence(&supplied, &[stop_hook], &[], None, Some("junk2"))
         .expect_err("the validation refuses the call");
@@ -417,6 +468,138 @@ fn test_at_the_door_the_configuration_ingestion_and_the_session_ingestion_and_th
         ],
     );
     assert_refusal(&run, "session labels do not match the session files");
+
+    let dir = door_dir("defect-config-end-bad");
+    let config = dir.join("settings.json");
+    std::fs::write(&config, DEFECT_SETTINGS).expect("the settings document writes");
+    let session = dir.join("session.jsonl");
+    std::fs::write(&session, "").expect("the session document writes");
+    let run = run_call(
+        &dir,
+        vec![
+            word("--config"),
+            config.into_os_string(),
+            word("--session"),
+            session.into_os_string(),
+            word("--output"),
+            dir.join("output.json").into_os_string(),
+            word("--report"),
+            dir.join("report.md").into_os_string(),
+            word("--window-end"),
+            word("junk2"),
+        ],
+    );
+    assert_refusal(&run, "a hook entry carries no command");
+
+    let dir = door_dir("missing-session-end-bad");
+    let config = dir.join("settings.json");
+    std::fs::write(&config, SETTINGS).expect("the settings document writes");
+    let run = run_call(
+        &dir,
+        vec![
+            word("--config"),
+            config.into_os_string(),
+            word("--session"),
+            dir.join("no-session.jsonl").into_os_string(),
+            word("--output"),
+            dir.join("output.json").into_os_string(),
+            word("--report"),
+            dir.join("report.md").into_os_string(),
+            word("--window-end"),
+            word("junk2"),
+        ],
+    );
+    assert_refusal(&run, "the session file could not be read");
+
+    let dir = door_dir("config-label-raw-byte");
+    let config = dir.join("settings.json");
+    std::fs::write(&config, SETTINGS).expect("the settings document writes");
+    let session = dir.join("session.jsonl");
+    std::fs::write(&session, "").expect("the session document writes");
+    let run = run_call(
+        &dir,
+        vec![
+            word("--config"),
+            config.into_os_string(),
+            word("--session"),
+            session.into_os_string(),
+            word("--output"),
+            dir.join("output.json").into_os_string(),
+            word("--report"),
+            dir.join("report.md").into_os_string(),
+            word("--config-label"),
+            OsString::from_vec(vec![0xff]),
+            word("--window-start"),
+            word("junk"),
+        ],
+    );
+    assert_refusal(&run, "the configuration label is not UTF-8 text");
+
+    let dir = door_dir("malformed-config");
+    let config = dir.join("settings.json");
+    std::fs::write(&config, "{not json").expect("the settings document writes");
+    let session = dir.join("session.jsonl");
+    std::fs::write(&session, "").expect("the session document writes");
+    let run = run_call(
+        &dir,
+        vec![
+            word("--config"),
+            config.into_os_string(),
+            word("--session"),
+            session.into_os_string(),
+            word("--output"),
+            dir.join("output.json").into_os_string(),
+            word("--report"),
+            dir.join("report.md").into_os_string(),
+            word("--window-start"),
+            word("junk"),
+        ],
+    );
+    assert_refusal(&run, "the configuration is not valid JSON");
+
+    let dir = door_dir("session-line-invalid");
+    let config = dir.join("settings.json");
+    std::fs::write(&config, SETTINGS).expect("the settings document writes");
+    let session = dir.join("session.jsonl");
+    std::fs::write(&session, "{bad line\n").expect("the session document writes");
+    let run = run_call(
+        &dir,
+        vec![
+            word("--config"),
+            config.into_os_string(),
+            word("--session"),
+            session.into_os_string(),
+            word("--output"),
+            dir.join("output.json").into_os_string(),
+            word("--report"),
+            dir.join("report.md").into_os_string(),
+            word("--window-start"),
+            word("junk"),
+        ],
+    );
+    assert_refusal(&run, "a session line is not valid JSON");
+
+    let dir = door_dir("session-not-utf8");
+    let config = dir.join("settings.json");
+    std::fs::write(&config, SETTINGS).expect("the settings document writes");
+    let session = dir.join("session.jsonl");
+    std::fs::write(&session, vec![0xff_u8, 0xfe, 0x0a]).expect("the session document writes");
+    let run = run_call(
+        &dir,
+        vec![
+            word("--config"),
+            config.into_os_string(),
+            word("--session"),
+            session.into_os_string(),
+            word("--output"),
+            dir.join("output.json").into_os_string(),
+            word("--report"),
+            dir.join("report.md").into_os_string(),
+            word("--window-start"),
+            word("junk"),
+        ],
+    );
+    assert_refusal(&run, "the session file is not UTF-8 text");
 }
 
 #[test]
@@ -503,6 +686,112 @@ fn test_at_the_door_two_window_words_that_do_not_read_name_the_start_and_a_check
             word("--session"),
             session.into_os_string(),
             word("--check-report"),
+            supplied.into_os_string(),
+            word("--window-start"),
+            word("junk"),
+        ],
+    );
+    assert_refusal(&run, "the window start is not a timestamp");
+
+    let dir = door_dir("plain-start-alone");
+    let config = dir.join("settings.json");
+    std::fs::write(&config, SETTINGS).expect("the settings document writes");
+    let session = dir.join("session.jsonl");
+    std::fs::write(&session, "").expect("the session document writes");
+    let run = run_call(
+        &dir,
+        vec![
+            word("--config"),
+            config.into_os_string(),
+            word("--session"),
+            session.into_os_string(),
+            word("--output"),
+            dir.join("output.json").into_os_string(),
+            word("--report"),
+            dir.join("report.md").into_os_string(),
+            word("--window-start"),
+            word("junk"),
+        ],
+    );
+    assert_refusal(&run, "the window start is not a timestamp");
+
+    let dir = door_dir("checked-report-disagrees-end-bad");
+    let config = dir.join("settings.json");
+    std::fs::write(&config, SETTINGS).expect("the settings document writes");
+    let session = dir.join("session.jsonl");
+    std::fs::write(&session, "").expect("the session document writes");
+    let supplied = dir.join("supplied.json");
+    std::fs::write(&supplied, "{}").expect("the supplied document writes");
+    let run = run_call(
+        &dir,
+        vec![
+            word("--config"),
+            config.into_os_string(),
+            word("--session"),
+            session.into_os_string(),
+            word("--check-report"),
+            supplied.into_os_string(),
+            word("--window-end"),
+            word("junk2"),
+        ],
+    );
+    assert_refusal(&run, "the window end is not a timestamp");
+
+    let dir = door_dir("checked-evidence-missing");
+    let config = dir.join("settings.json");
+    std::fs::write(&config, SETTINGS).expect("the settings document writes");
+    let session = dir.join("session.jsonl");
+    std::fs::write(&session, "").expect("the session document writes");
+    let run = run_call(
+        &dir,
+        vec![
+            word("--config"),
+            config.into_os_string(),
+            word("--session"),
+            session.into_os_string(),
+            word("--check-evidence"),
+            dir.join("no-evidence.json").into_os_string(),
+            word("--window-start"),
+            word("junk"),
+        ],
+    );
+    assert_refusal(&run, "the evidence document could not be read");
+
+    let dir = door_dir("checked-markdown-missing");
+    let config = dir.join("settings.json");
+    std::fs::write(&config, SETTINGS).expect("the settings document writes");
+    let session = dir.join("session.jsonl");
+    std::fs::write(&session, "").expect("the session document writes");
+    let run = run_call(
+        &dir,
+        vec![
+            word("--config"),
+            config.into_os_string(),
+            word("--session"),
+            session.into_os_string(),
+            word("--check-markdown"),
+            dir.join("no-report.md").into_os_string(),
+            word("--window-start"),
+            word("junk"),
+        ],
+    );
+    assert_refusal(&run, "the markdown report could not be read");
+
+    let dir = door_dir("checked-evidence-disagrees");
+    let config = dir.join("settings.json");
+    std::fs::write(&config, SETTINGS).expect("the settings document writes");
+    let session = dir.join("session.jsonl");
+    std::fs::write(&session, "").expect("the session document writes");
+    let supplied = dir.join("supplied.json");
+    std::fs::write(&supplied, "{}").expect("the supplied document writes");
+    let run = run_call(
+        &dir,
+        vec![
+            word("--config"),
+            config.into_os_string(),
+            word("--session"),
+            session.into_os_string(),
+            word("--check-evidence"),
             supplied.into_os_string(),
             word("--window-start"),
             word("junk"),
