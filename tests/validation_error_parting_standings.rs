@@ -187,6 +187,53 @@ fn test_the_window_start_wording_the_window_end_wording_and_the_matcher_wording_
     )
     .expect_err("the validation refuses on the matcher");
     assert_eq!(error.message(), "a matcher is not a valid pattern");
+
+    let error: ReportValidationError = validate_report(
+        &supplied,
+        &[stop_hook()],
+        &[],
+        "cfg",
+        &sources(),
+        None,
+        Some("junk"),
+    )
+    .expect_err("the report validation refuses on the window end");
+    assert_eq!(error.message(), "the window end is not a timestamp");
+
+    let error: ReportValidationError =
+        validate_evidence(&supplied, &[stop_hook()], &[], Some("junk"), None)
+            .expect_err("the evidence validation refuses on the window start");
+    assert_eq!(error.message(), "the window start is not a timestamp");
+
+    let error: ReportValidationError = validate_markdown(
+        b"{}",
+        &[stop_hook()],
+        &[],
+        "cfg",
+        &sources(),
+        None,
+        Some("junk"),
+    )
+    .expect_err("the markdown validation refuses on the window end");
+    assert_eq!(error.message(), "the window end is not a timestamp");
+
+    let bad_hook = hook("PreToolUse", Some("["), "guard.sh");
+    let error: ReportValidationError = validate_markdown(
+        b"{}",
+        std::slice::from_ref(&bad_hook),
+        &[tool_call(1)],
+        "cfg",
+        &sources(),
+        None,
+        None,
+    )
+    .expect_err("the markdown validation refuses on the matcher");
+    assert_eq!(error.message(), "a matcher is not a valid pattern");
+
+    let error: ReportValidationError =
+        validate_evidence(&supplied, &[bad_hook], &[tool_call(1)], None, None)
+            .expect_err("the evidence validation refuses on the matcher");
+    assert_eq!(error.message(), "a matcher is not a valid pattern");
 }
 
 #[test]
@@ -213,6 +260,31 @@ fn test_the_builders_the_examination_the_reader_and_the_configuration_reading_ra
     let error: HookdoctorError =
         parse_config(&JsonValue::text("not an object")).expect_err("the configuration refuses");
     assert_eq!(error.message(), "the configuration is not a JSON object");
+
+    let error: HookdoctorError = hookdoctor::ingest::parse_session_text("not json", 0)
+        .expect_err("the session reading refuses an invalid line");
+    assert_eq!(error.message(), "a session line is not valid JSON");
+
+    let error: HookdoctorError = read_json_document("{\"a\":1,\"a\":2}", "document")
+        .expect_err("the reader refuses a repeated key");
+    assert_eq!(
+        error.message(),
+        "the document carries the key a more than once"
+    );
+
+    let document = JsonValue::object(vec![("hooks", JsonValue::text("not an object"))]);
+    let error: HookdoctorError =
+        parse_config(&document).expect_err("the configuration reading refuses");
+    assert_eq!(error.message(), "the hooks value is not an object");
+
+    let error: HookdoctorError =
+        build_report(&[stop_hook()], &[], "cfg", &sources(), None, Some("junk"))
+            .expect_err("the report building refuses on the window end");
+    assert_eq!(error.message(), "the window end is not a timestamp");
+
+    let error: HookdoctorError = build_evidence(&[stop_hook()], &[], Some("junk"), None)
+        .expect_err("the evidence building refuses on the window start");
+    assert_eq!(error.message(), "the window start is not a timestamp");
 }
 
 #[test]
@@ -293,6 +365,50 @@ fn test_the_one_conversion_carries_the_disagreement_and_crossed_messages_across_
     assert_eq!(crossed.to_string(), "the window start is not a timestamp");
     let converted = HookdoctorError::from(crossed);
     assert_eq!(converted.message(), "the window start is not a timestamp");
+
+    let report = standing_report();
+    let tampered = tamper(&report, "format", JsonValue::text("hookdoctor-report/2"));
+    let error: ReportValidationError = validate_report(
+        &tampered,
+        &[stop_hook()],
+        &[],
+        "cfg",
+        &sources(),
+        None,
+        None,
+    )
+    .expect_err("the tampered report refuses");
+    let converted = HookdoctorError::from(error);
+    assert_eq!(
+        converted,
+        HookdoctorError::new("the report disagrees with the examination")
+    );
+
+    let supplied = JsonValue::object(vec![]);
+    let crossed: ReportValidationError = validate_report(
+        &supplied,
+        &[stop_hook()],
+        &[],
+        "cfg",
+        &sources(),
+        Some("junk"),
+        None,
+    )
+    .expect_err("the report validation refuses on the window");
+    let converted = HookdoctorError::from(crossed);
+    assert_eq!(converted.message(), "the window start is not a timestamp");
+
+    let rendered = render_markdown(&report);
+    let mut bytes = rendered.into_bytes();
+    bytes[0] = b'X';
+    let error: ReportValidationError =
+        validate_markdown(&bytes, &[stop_hook()], &[], "cfg", &sources(), None, None)
+            .expect_err("the tampered markdown refuses");
+    let converted = HookdoctorError::from(error);
+    assert_eq!(
+        converted.message(),
+        "the markdown report disagrees with the examination"
+    );
 }
 
 /// The settings document the door cells stand on,
