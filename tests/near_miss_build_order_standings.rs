@@ -421,6 +421,163 @@ fn test_two_misses_tying_on_the_whole_key_across_two_files_under_one_label_stand
             ),
         ]
     );
+
+    let records = [
+        tool_call(Some("sess-a"), 0, 1, "not-a-timestamp", "bash", "call-a"),
+        tool_call(Some("sess-b"), 1, 1, "not-a-timestamp", "BASH", "call-b"),
+    ];
+    let misses = near_misses(&hooks, &records, &sources);
+    assert_eq!(
+        shapes(&misses),
+        vec![
+            shape(
+                "PreToolUse:0:0",
+                "name-form",
+                "PreToolUse",
+                "bash",
+                "not-a-timestamp",
+                "same.jsonl",
+                1
+            ),
+            shape(
+                "PreToolUse:0:0",
+                "name-form",
+                "PreToolUse",
+                "BASH",
+                "not-a-timestamp",
+                "same.jsonl",
+                1
+            ),
+        ]
+    );
+
+    let records = [
+        tool_call(Some("sess-b"), 1, 1, "not-a-timestamp", "BASH", "call-b"),
+        tool_call(Some("sess-a"), 0, 1, "not-a-timestamp", "bash", "call-a"),
+    ];
+    let misses = near_misses(&hooks, &records, &sources);
+    assert_eq!(
+        shapes(&misses),
+        vec![
+            shape(
+                "PreToolUse:0:0",
+                "name-form",
+                "PreToolUse",
+                "BASH",
+                "not-a-timestamp",
+                "same.jsonl",
+                1
+            ),
+            shape(
+                "PreToolUse:0:0",
+                "name-form",
+                "PreToolUse",
+                "bash",
+                "not-a-timestamp",
+                "same.jsonl",
+                1
+            ),
+        ]
+    );
+
+    let mut no_stamp_a = record("tool_call", Some("sess-a"), 0, 1);
+    no_stamp_a.tool_name = Some("bash".to_string());
+    no_stamp_a.call_id = Some("call-a".to_string());
+    let mut no_stamp_b = record("tool_call", Some("sess-b"), 1, 1);
+    no_stamp_b.tool_name = Some("BASH".to_string());
+    no_stamp_b.call_id = Some("call-b".to_string());
+    let records = [no_stamp_a, no_stamp_b];
+    let misses = near_misses(&hooks, &records, &sources);
+    assert_eq!(
+        shapes(&misses),
+        vec![
+            (
+                "PreToolUse:0:0".to_string(),
+                "name-form".to_string(),
+                "PreToolUse".to_string(),
+                Some("bash".to_string()),
+                None,
+                Some("same.jsonl".to_string()),
+                1,
+            ),
+            (
+                "PreToolUse:0:0".to_string(),
+                "name-form".to_string(),
+                "PreToolUse".to_string(),
+                Some("BASH".to_string()),
+                None,
+                Some("same.jsonl".to_string()),
+                1,
+            ),
+        ]
+    );
+
+    let dup_sources = labels(&["only.jsonl"]);
+    let dup_hooks = [
+        hook("PreToolUse:0:0", "PreToolUse", "Bash", "guard-one.sh"),
+        hook("PreToolUse:0:0", "PreToolUse", "Edit", "guard-two.sh"),
+    ];
+    let records = [
+        tool_call(Some("sess"), 0, 1, T, "bash", "call-1"),
+        tool_call(Some("sess"), 0, 1, T, "edit", "call-2"),
+    ];
+    let misses = near_misses(&dup_hooks, &records, &dup_sources);
+    assert_eq!(
+        shapes(&misses),
+        vec![
+            shape(
+                "PreToolUse:0:0",
+                "name-form",
+                "PreToolUse",
+                "bash",
+                T,
+                "only.jsonl",
+                1
+            ),
+            shape(
+                "PreToolUse:0:0",
+                "name-form",
+                "PreToolUse",
+                "edit",
+                T,
+                "only.jsonl",
+                1
+            ),
+        ]
+    );
+
+    let dup_hooks = [
+        hook("PreToolUse:0:0", "PreToolUse", "Edit", "guard-two.sh"),
+        hook("PreToolUse:0:0", "PreToolUse", "Bash", "guard-one.sh"),
+    ];
+    let records = [
+        tool_call(Some("sess"), 0, 1, T, "bash", "call-1"),
+        tool_call(Some("sess"), 0, 1, T, "edit", "call-2"),
+    ];
+    let misses = near_misses(&dup_hooks, &records, &dup_sources);
+    assert_eq!(
+        shapes(&misses),
+        vec![
+            shape(
+                "PreToolUse:0:0",
+                "name-form",
+                "PreToolUse",
+                "edit",
+                T,
+                "only.jsonl",
+                1
+            ),
+            shape(
+                "PreToolUse:0:0",
+                "name-form",
+                "PreToolUse",
+                "bash",
+                T,
+                "only.jsonl",
+                1
+            ),
+        ]
+    );
 }
 
 #[test]
@@ -518,6 +675,148 @@ fn test_at_a_paired_call_the_subject_after_the_tool_stands_in_the_build_at_its_c
                 "name-form",
                 "PostToolUse",
                 "BASH",
+                T,
+                "same.jsonl",
+                9
+            ),
+        ]
+    );
+
+    let mut subagent_hook = hook("SubagentStop:0:0", "SubagentStop", "", "guard-sub.sh");
+    subagent_hook.matcher = None;
+    let run_hooks = [subagent_hook];
+    let run_sources = labels(&["only.jsonl"]);
+
+    let mut run_stop = record("hook_run", None, 0, 1);
+    run_stop.hook_event = Some("Stop".to_string());
+    run_stop.timestamp = Some(T.to_string());
+    let mut run_doubled = record("hook_run", None, 0, 1);
+    run_doubled.hook_event = Some("SubagentSubagentStop".to_string());
+    run_doubled.timestamp = Some(T.to_string());
+    let records = [run_stop, run_doubled];
+    let misses = near_misses(&run_hooks, &records, &run_sources);
+    assert_eq!(
+        shapes(&misses),
+        vec![
+            (
+                "SubagentStop:0:0".to_string(),
+                "subagent-prefix".to_string(),
+                "Stop".to_string(),
+                None,
+                Some(T.to_string()),
+                Some("only.jsonl".to_string()),
+                1,
+            ),
+            (
+                "SubagentStop:0:0".to_string(),
+                "subagent-prefix".to_string(),
+                "SubagentSubagentStop".to_string(),
+                None,
+                Some(T.to_string()),
+                Some("only.jsonl".to_string()),
+                1,
+            ),
+        ]
+    );
+
+    let mut run_stop = record("hook_run", None, 0, 1);
+    run_stop.hook_event = Some("Stop".to_string());
+    run_stop.timestamp = Some(T.to_string());
+    let mut run_doubled = record("hook_run", None, 0, 1);
+    run_doubled.hook_event = Some("SubagentSubagentStop".to_string());
+    run_doubled.timestamp = Some(T.to_string());
+    let records = [run_doubled, run_stop];
+    let misses = near_misses(&run_hooks, &records, &run_sources);
+    assert_eq!(
+        shapes(&misses),
+        vec![
+            (
+                "SubagentStop:0:0".to_string(),
+                "subagent-prefix".to_string(),
+                "SubagentSubagentStop".to_string(),
+                None,
+                Some(T.to_string()),
+                Some("only.jsonl".to_string()),
+                1,
+            ),
+            (
+                "SubagentStop:0:0".to_string(),
+                "subagent-prefix".to_string(),
+                "Stop".to_string(),
+                None,
+                Some(T.to_string()),
+                Some("only.jsonl".to_string()),
+                1,
+            ),
+        ]
+    );
+
+    let records = [
+        tool_outcome(Some("sess-a"), 0, 9, T, "c1"),
+        tool_call(Some("sess-a"), 0, 3, T, "bash", "c1"),
+        tool_call(Some("sess-b"), 1, 9, T, "Bash", "c2"),
+    ];
+    let misses = near_misses(&hooks, &records, &sources);
+    assert_eq!(
+        shapes(&misses),
+        vec![
+            shape(
+                "PostToolUse:0:0",
+                "name-form",
+                "PostToolUse",
+                "bash",
+                T,
+                "same.jsonl",
+                9
+            ),
+            shape(
+                "PostToolUse:0:0",
+                "paired-event",
+                "PreToolUse",
+                "Bash",
+                T,
+                "same.jsonl",
+                9
+            ),
+        ]
+    );
+
+    let three_sources = labels(&["same.jsonl", "same.jsonl", "same.jsonl"]);
+    let records = [
+        tool_call(Some("sess-a"), 0, 1, T, "bash", "c1"),
+        tool_call(Some("sess-b"), 1, 1, T, "BASH", "c2"),
+        tool_call(Some("sess-c"), 2, 1, T, "bAsh", "c3"),
+        tool_outcome(Some("sess-c"), 2, 9, T, "c3"),
+        tool_outcome(Some("sess-b"), 1, 9, T, "c2"),
+        tool_outcome(Some("sess-a"), 0, 9, T, "c1"),
+    ];
+    let misses = near_misses(&hooks, &records, &three_sources);
+    assert_eq!(
+        shapes(&misses),
+        vec![
+            shape(
+                "PostToolUse:0:0",
+                "name-form",
+                "PostToolUse",
+                "bash",
+                T,
+                "same.jsonl",
+                9
+            ),
+            shape(
+                "PostToolUse:0:0",
+                "name-form",
+                "PostToolUse",
+                "BASH",
+                T,
+                "same.jsonl",
+                9
+            ),
+            shape(
+                "PostToolUse:0:0",
+                "name-form",
+                "PostToolUse",
+                "bAsh",
                 T,
                 "same.jsonl",
                 9
@@ -729,6 +1028,49 @@ fn test_the_gathering_stands_in_build_order_inside_a_hook_with_three_misses_tyin
             ),
         ]
     );
+
+    let dedup_hooks = [hook(
+        "PreToolUse:0:0",
+        "PreToolUse",
+        "Bash",
+        "guard-bash.sh",
+    )];
+    let dedup_sources = labels(&["only.jsonl"]);
+    let records = [
+        tool_call(Some("sess"), 0, 1, "2026-01-01T10:00:00Z", "bash", "call-1"),
+        tool_call(Some("sess"), 0, 1, "2026-01-01T08:00:00Z", "bash", "call-2"),
+    ];
+    let misses = near_misses(&dedup_hooks, &records, &dedup_sources);
+    assert_eq!(
+        shapes(&misses),
+        vec![shape(
+            "PreToolUse:0:0",
+            "name-form",
+            "PreToolUse",
+            "bash",
+            "2026-01-01T10:00:00Z",
+            "only.jsonl",
+            1
+        )]
+    );
+
+    let records = [
+        tool_call(Some("sess"), 0, 1, "2026-01-01T08:00:00Z", "bash", "call-2"),
+        tool_call(Some("sess"), 0, 1, "2026-01-01T10:00:00Z", "bash", "call-1"),
+    ];
+    let misses = near_misses(&dedup_hooks, &records, &dedup_sources);
+    assert_eq!(
+        shapes(&misses),
+        vec![shape(
+            "PreToolUse:0:0",
+            "name-form",
+            "PreToolUse",
+            "bash",
+            "2026-01-01T08:00:00Z",
+            "only.jsonl",
+            1
+        )]
+    );
 }
 
 #[test]
@@ -773,6 +1115,83 @@ fn test_at_the_door_two_session_files_under_one_file_name_carry_a_tying_pair_in_
     std::fs::write(&only, session_line("Bash", "call-a", T)).expect("the session writes");
     let run = door_call(&dir, vec![only]);
     assert_eq!(report_tools(&run), Vec::<Option<String>>::new());
+
+    let dir = door_dir("triple-in-order");
+    let first = dir.join("first");
+    let second = dir.join("second");
+    let third = dir.join("third");
+    std::fs::create_dir_all(&first).expect("the first directory stands");
+    std::fs::create_dir_all(&second).expect("the second directory stands");
+    std::fs::create_dir_all(&third).expect("the third directory stands");
+    let first_session = first.join("trace.jsonl");
+    let second_session = second.join("trace.jsonl");
+    let third_session = third.join("trace.jsonl");
+    std::fs::write(&first_session, session_line("bash", "call-a", T))
+        .expect("the first session writes");
+    std::fs::write(&second_session, session_line("BASH", "call-b", T))
+        .expect("the second session writes");
+    std::fs::write(&third_session, session_line("bAsh", "call-c", T))
+        .expect("the third session writes");
+    let run = door_call(
+        &dir,
+        vec![
+            first_session.clone(),
+            second_session.clone(),
+            third_session.clone(),
+        ],
+    );
+    assert_eq!(
+        report_tools(&run),
+        vec![
+            Some("bash".to_string()),
+            Some("BASH".to_string()),
+            Some("bAsh".to_string())
+        ]
+    );
+
+    let dir = door_dir("triple-flipped");
+    let first = dir.join("first");
+    let second = dir.join("second");
+    let third = dir.join("third");
+    std::fs::create_dir_all(&first).expect("the first directory stands");
+    std::fs::create_dir_all(&second).expect("the second directory stands");
+    std::fs::create_dir_all(&third).expect("the third directory stands");
+    let first_session = first.join("trace.jsonl");
+    let second_session = second.join("trace.jsonl");
+    let third_session = third.join("trace.jsonl");
+    std::fs::write(&first_session, session_line("bash", "call-a", T))
+        .expect("the first session writes");
+    std::fs::write(&second_session, session_line("BASH", "call-b", T))
+        .expect("the second session writes");
+    std::fs::write(&third_session, session_line("bAsh", "call-c", T))
+        .expect("the third session writes");
+    let run = door_call(&dir, vec![third_session, second_session, first_session]);
+    assert_eq!(
+        report_tools(&run),
+        vec![
+            Some("bAsh".to_string()),
+            Some("BASH".to_string()),
+            Some("bash".to_string())
+        ]
+    );
+
+    let dir = door_dir("line-parting");
+    let first = dir.join("first");
+    let second = dir.join("second");
+    std::fs::create_dir_all(&first).expect("the first directory stands");
+    std::fs::create_dir_all(&second).expect("the second directory stands");
+    let first_session = first.join("trace.jsonl");
+    let second_session = second.join("trace.jsonl");
+    let mut first_text = session_line("Edit", "call-x", T);
+    first_text.push_str(&session_line("bash", "call-a", T));
+    std::fs::write(&first_session, first_text).expect("the first session writes");
+    std::fs::write(&second_session, session_line("BASH", "call-b", T))
+        .expect("the second session writes");
+    let run = door_call(&dir, vec![first_session, second_session]);
+    assert_eq!(
+        report_tools(&run),
+        vec![Some("BASH".to_string()), Some("bash".to_string())]
+    );
 }
 
 #[test]
