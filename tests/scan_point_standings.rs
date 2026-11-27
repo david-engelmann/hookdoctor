@@ -147,6 +147,10 @@ fn test_an_ambiguous_shortened_flag_refuses_at_its_point_ahead_of_a_help_flag() 
         ("sess-long-help", vec!["--sess", "--help"]),
         ("check-long-help", vec!["--check-", "--help"]),
         ("window-long-help", vec!["--w", "--help"]),
+        ("s-long-help", vec!["--s", "--help"]),
+        ("ch-long-help", vec!["--ch", "--help"]),
+        ("c-short-help", vec!["--c", "-h"]),
+        ("window-dash-long-help", vec!["--window-", "--help"]),
         ("con-short-help", vec!["--con", "-h"]),
         ("con-inline-help", vec!["--con=x", "--help"]),
     ] {
@@ -213,6 +217,7 @@ fn test_words_set_aside_by_the_scan_refuse_only_at_the_end_of_the_walk() {
         vec!["--bogus", "--con", "--help"],
         vec!["word", "--con", "--help"],
         vec!["-xh", "--con", "--help"],
+        vec!["--", "--con", "--help"],
     ] {
         let output = invoke(&words(&args));
         assert_usage_refusal(&output);
@@ -246,6 +251,8 @@ fn test_the_help_flag_answers_at_its_point_ahead_of_the_point_refusals() {
         vec!["-h", "--con"],
         vec!["-hx", "--con=x"],
         vec!["--he", "--sess"],
+        vec!["--hel", "--con"],
+        vec!["--h", "--con"],
         vec!["--help", "--config"],
     ] {
         let output = invoke(&words(&args));
@@ -300,6 +307,11 @@ fn test_the_point_and_deferred_refusals_write_neither_output_at_the_door() {
     let output = invoke(&full_args(&deferred_cell, &["--bogus"]));
     assert_usage_refusal(&output);
     assert_no_outputs(&deferred_cell);
+
+    let separator_cell = cell_dir(&pin, "separator-at-end");
+    let output = invoke(&full_args(&separator_cell, &["--"]));
+    assert_usage_refusal(&output);
+    assert_no_outputs(&separator_cell);
 
     let help_cell = cell_dir(&pin, "help-at-end");
     let output = invoke(&full_args(&help_cell, &["--help"]));
