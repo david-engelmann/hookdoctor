@@ -154,6 +154,26 @@ fn test_inside_one_group_the_hooks_list_refusal_stands_ahead_of_the_matcher_refu
         config_refusal("{\"hooks\": {\"PreToolUse\": [{\"matcher\": \"[\", \"hooks\": [7]}]}}"),
         "a matcher is not a valid pattern"
     );
+    assert_eq!(
+        config_refusal("{\"hooks\": {\"PreToolUse\": [{\"matcher\": 5, \"hooks\": [7]}]}}"),
+        "a matcher is not a string"
+    );
+    assert_eq!(
+        config_refusal("{\"hooks\": {\"PreToolUse\": [{\"matcher\": \"[\", \"hooks\": [{}]}]}}"),
+        "a matcher is not a valid pattern"
+    );
+    assert_eq!(
+        config_refusal("{\"hooks\": {\"PreToolUse\": [{\"matcher\": null, \"hooks\": [{}]}]}}"),
+        "a hook entry carries no command"
+    );
+    assert_eq!(
+        config_refusal("{\"hooks\": {\"PreToolUse\": [{\"matcher\": \"[\", \"hooks\": null}]}}"),
+        "a matcher group carries no hooks list"
+    );
+    assert_eq!(
+        config_refusal("{\"hooks\": {\"PreToolUse\": [{\"matcher\": [\"x\"]}]}}"),
+        "a matcher group carries no hooks list"
+    );
 }
 
 #[test]
@@ -187,6 +207,18 @@ fn test_inside_one_entry_the_shape_refusal_stands_first_and_the_command_refusal_
         ),
         "a hook entry carries no type"
     );
+    assert_eq!(
+        config_refusal(
+            "{\"hooks\": {\"PreToolUse\": [{\"hooks\": [{\"command\": \"a.sh\"}, 7]}]}}"
+        ),
+        "a hook entry is not an object"
+    );
+    assert_eq!(
+        config_refusal(
+            "{\"hooks\": {\"PreToolUse\": [{\"hooks\": [{\"command\": \"\", \"type\": \"\"}]}]}}"
+        ),
+        "a hook entry carries no command"
+    );
 }
 
 #[test]
@@ -216,6 +248,18 @@ fn test_a_defect_of_an_earlier_group_fires_ahead_of_every_defect_of_a_later_grou
         ),
         "a matcher group is not an object"
     );
+    assert_eq!(
+        config_refusal(
+            "{\"hooks\": {\"PreToolUse\": [{\"matcher\": \"[\", \"hooks\": [{\"command\": \"x.sh\"}]}, {\"hooks\": [{}]}]}}"
+        ),
+        "a matcher is not a valid pattern"
+    );
+    assert_eq!(
+        config_refusal(
+            "{\"hooks\": {\"PreToolUse\": [\"loose\", {\"matcher\": 5, \"hooks\": [{\"command\": \"x.sh\"}]}]}}"
+        ),
+        "a matcher group is not an object"
+    );
 }
 
 #[test]
@@ -239,6 +283,22 @@ fn test_the_events_stand_taken_in_the_order_they_stand_written_and_no_order_of_t
     );
     assert_eq!(
         config_refusal("{\"hooks\": {\"PreToolUse\": [{\"matcher\": \"\", \"hooks\": [{}]}]}}"),
+        "a hook entry carries no command"
+    );
+    assert_eq!(
+        config_refusal(
+            "{\"hooks\": {\"Mid\": [{\"hooks\": [{\"command\": \"x.sh\"}]}], \"Zeta\": [{\"matcher\": 5, \"hooks\": [{\"command\": \"x.sh\"}]}], \"Alpha\": 5}}"
+        ),
+        "a matcher is not a string"
+    );
+    assert_eq!(
+        config_refusal("{\"hooks\": {\"PreToolUse\": [], \"Stop\": 5}}"),
+        "a hooks event does not carry a list of groups"
+    );
+    assert_eq!(
+        config_refusal(
+            "{\"hooks\": {\"A\": [{\"hooks\": [{\"command\": \"x.sh\"}]}], \"B\": [{\"hooks\": [{\"command\": \"y.sh\"}]}], \"C\": [{\"hooks\": [{}]}]}}"
+        ),
         "a hook entry carries no command"
     );
 }
@@ -291,4 +351,28 @@ fn test_at_the_door_the_first_defect_of_the_document_names_the_refusal_line_and_
     assert!(run.stderr.is_empty());
     assert!(run.output.exists());
     assert!(run.report.exists());
+    let run = run_door(
+        "across-events",
+        "{\"hooks\": {\"Zeta\": [{\"matcher\": 5, \"hooks\": [{\"command\": \"x.sh\"}]}], \"Alpha\": 5}}",
+    );
+    assert_eq!(run.code, Some(2));
+    assert_eq!(
+        run.stderr,
+        b"hookdoctor error: a matcher is not a string\n".to_vec()
+    );
+    assert!(run.stdout.is_empty());
+    assert!(!run.output.exists());
+    assert!(!run.report.exists());
+    let run = run_door(
+        "validity-alone",
+        "{\"hooks\": {\"PreToolUse\": [{\"matcher\": \"[\", \"hooks\": [{\"command\": \"x.sh\"}]}]}}",
+    );
+    assert_eq!(run.code, Some(2));
+    assert_eq!(
+        run.stderr,
+        b"hookdoctor error: a matcher is not a valid pattern\n".to_vec()
+    );
+    assert!(run.stdout.is_empty());
+    assert!(!run.output.exists());
+    assert!(!run.report.exists());
 }
