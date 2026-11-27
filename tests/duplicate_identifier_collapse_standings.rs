@@ -17,7 +17,8 @@ use std::path::{Path, PathBuf};
 use std::process::Command;
 
 use hookdoctor::examine::{
-    build_evidence, build_report, examine_hooks, validate_markdown, validate_report,
+    build_evidence, build_report, examine_hooks, unconfigured_runs, validate_evidence,
+    validate_markdown, validate_report,
 };
 use hookdoctor::ingest::{parse_config, HookConfig, TraceRecord};
 use hookdoctor::jsonvalue::{parse_json, JsonValue};
@@ -72,6 +73,14 @@ fn hook(id: &str, event: &str, matcher: &str, command: &str) -> HookConfig {
     }
 }
 
+fn hook_run(command: &str, stamp: &str, line: i64) -> TraceRecord {
+    let mut built = record("hook_run", Some("sess"), 0, line);
+    built.command = Some(command.to_string());
+    built.hook_event = Some("PreToolUse".to_string());
+    built.timestamp = Some(stamp.to_string());
+    built
+}
+
 fn labels(texts: &[&str]) -> Vec<String> {
     texts.iter().map(|text| text.to_string()).collect()
 }
@@ -90,6 +99,23 @@ fn entries_of(hooks: &[HookConfig], records: &[TraceRecord], sources: &[String])
     let (entries, _misses) =
         examine_hooks(hooks, records, None, None, sources).expect("the examination stands");
     entries
+}
+
+fn entry_class(entry: &JsonValue) -> String {
+    match entry.get("class") {
+        Some(JsonValue::Text(text)) => text.clone(),
+        _ => panic!("the entry carries its class"),
+    }
+}
+
+fn entry_ran(entry: &JsonValue) -> i64 {
+    let evidence = entry
+        .get("evidence")
+        .expect("the entry carries its evidence");
+    match evidence.get("ran") {
+        Some(JsonValue::Int(value)) => *value,
+        _ => panic!("the evidence carries its ran count"),
+    }
 }
 
 fn miss_text(miss: &JsonValue, field: &str) -> Option<String> {
@@ -264,6 +290,135 @@ fn test_the_displaced_hook_of_a_separated_pair_keys_on_the_later_place_standing_
             ),
         ]
     );
+
+    let hooks = [
+        hook("dup", "PreToolUse", "Bash", "guard-one.sh"),
+        hook("mid1", "PreToolUse", "Edit", "guard-mid1.sh"),
+        hook("mid2", "PreToolUse", "Read", "guard-mid2.sh"),
+        hook("dup", "PreToolUse", "Write", "guard-two.sh"),
+    ];
+    let records = [
+        tool_call(Some("sess"), 0, 1, T, "bash", "call-1"),
+        tool_call(Some("sess"), 0, 1, T, "edit", "call-2"),
+        tool_call(Some("sess"), 0, 1, T, "read", "call-3"),
+        tool_call(Some("sess"), 0, 1, T, "write", "call-4"),
+    ];
+    let misses = near_misses(&hooks, &records, &sources);
+    assert_eq!(
+        shapes(&misses),
+        vec![
+            shape(
+                "mid1",
+                "name-form",
+                "PreToolUse",
+                "edit",
+                T,
+                "only.jsonl",
+                1
+            ),
+            shape(
+                "mid2",
+                "name-form",
+                "PreToolUse",
+                "read",
+                T,
+                "only.jsonl",
+                1
+            ),
+            shape("dup", "name-form", "PreToolUse", "bash", T, "only.jsonl", 1),
+            shape(
+                "dup",
+                "name-form",
+                "PreToolUse",
+                "write",
+                T,
+                "only.jsonl",
+                1
+            ),
+        ]
+    );
+
+    let hooks = [
+        hook("dup", "PreToolUse", "Bash", "guard-one.sh"),
+        hook("mid", "PreToolUse", "Edit", "guard-mid1.sh"),
+        hook("mid", "PreToolUse", "Write", "guard-mid2.sh"),
+        hook("dup", "PreToolUse", "Read", "guard-two.sh"),
+    ];
+    let records = [
+        tool_call(Some("sess"), 0, 1, T, "bash", "call-1"),
+        tool_call(Some("sess"), 0, 1, T, "edit", "call-2"),
+        tool_call(Some("sess"), 0, 1, T, "write", "call-3"),
+        tool_call(Some("sess"), 0, 1, T, "read", "call-4"),
+    ];
+    let misses = near_misses(&hooks, &records, &sources);
+    assert_eq!(
+        shapes(&misses),
+        vec![
+            shape("mid", "name-form", "PreToolUse", "edit", T, "only.jsonl", 1),
+            shape(
+                "mid",
+                "name-form",
+                "PreToolUse",
+                "write",
+                T,
+                "only.jsonl",
+                1
+            ),
+            shape("dup", "name-form", "PreToolUse", "bash", T, "only.jsonl", 1),
+            shape("dup", "name-form", "PreToolUse", "read", T, "only.jsonl", 1),
+        ]
+    );
+
+    let hooks = [
+        hook("dup", "PreToolUse", "Bash", "guard-one.sh"),
+        hook("mid", "PreToolUse", "Edit", "guard-mid.sh"),
+        hook("dup", "PreToolUse", "write", "guard-two.sh"),
+    ];
+    let records = [
+        tool_call(Some("sess"), 0, 1, T, "bash", "call-1"),
+        tool_call(Some("sess"), 0, 1, T, "edit", "call-2"),
+        tool_call(Some("sess"), 0, 1, T, "write", "call-3"),
+    ];
+    let entries = entries_of(&hooks, &records, &sources);
+    assert_eq!(entries.len(), 3);
+    assert_eq!(entry_class(&entries[0]), "silent");
+    assert_eq!(entry_class(&entries[2]), "firing-without-effect");
+    assert_eq!(entry_ran(&entries[2]), 1);
+    let misses = near_misses(&hooks, &records, &sources);
+    assert_eq!(
+        shapes(&misses),
+        vec![
+            shape("mid", "name-form", "PreToolUse", "edit", T, "only.jsonl", 1),
+            shape("dup", "name-form", "PreToolUse", "bash", T, "only.jsonl", 1),
+        ]
+    );
+
+    let hooks = [
+        hook("dup", "PreToolUse", "bash", "guard-one.sh"),
+        hook("mid", "PreToolUse", "Edit", "guard-mid.sh"),
+        hook("dup", "PreToolUse", "Write", "guard-two.sh"),
+    ];
+    let entries = entries_of(&hooks, &records, &sources);
+    assert_eq!(entries.len(), 3);
+    assert_eq!(entry_class(&entries[0]), "firing-without-effect");
+    assert_eq!(entry_ran(&entries[0]), 1);
+    assert_eq!(entry_class(&entries[2]), "silent");
+    let misses = near_misses(&hooks, &records, &sources);
+    assert_eq!(
+        shapes(&misses),
+        vec![
+            shape("mid", "name-form", "PreToolUse", "edit", T, "only.jsonl", 1),
+            shape(
+                "dup",
+                "name-form",
+                "PreToolUse",
+                "write",
+                T,
+                "only.jsonl",
+                1
+            ),
+        ]
+    );
 }
 
 #[test]
@@ -328,6 +483,20 @@ fn test_an_adjacent_pair_stands_at_its_shared_place_ahead_of_a_following_hook_an
         vec![
             shape("dup", "name-form", "PreToolUse", "edit", T, "only.jsonl", 1),
             shape("dup", "name-form", "PreToolUse", "bash", T, "only.jsonl", 2),
+        ]
+    );
+
+    let sources = labels(&["a.jsonl", "b.jsonl"]);
+    let records = [
+        tool_call(Some("sess"), 1, 1, T, "bash", "call-1"),
+        tool_call(Some("sess"), 0, 1, T, "edit", "call-2"),
+    ];
+    let misses = near_misses(&pair, &records, &sources);
+    assert_eq!(
+        shapes(&misses),
+        vec![
+            shape("dup", "name-form", "PreToolUse", "edit", T, "a.jsonl", 1),
+            shape("dup", "name-form", "PreToolUse", "bash", T, "b.jsonl", 1),
         ]
     );
 }
@@ -443,6 +612,33 @@ fn test_three_hooks_under_one_identifier_share_the_place_of_the_last_of_them_sta
             shape("dup", "name-form", "PreToolUse", "bash", T, "only.jsonl", 1),
         ]
     );
+
+    let records = [
+        tool_call(Some("sess"), 0, 1, T, "bash", "call-1"),
+        tool_call(Some("sess"), 0, 9, T, "bash", "call-2"),
+        tool_call(Some("sess"), 0, 3, T, "edit", "call-3"),
+        tool_call(Some("sess"), 0, 7, T, "edit", "call-4"),
+        tool_call(Some("sess"), 0, 5, T, "write", "call-5"),
+    ];
+    let misses = near_misses(&three, &records, &sources);
+    assert_eq!(
+        shapes(&misses),
+        vec![
+            shape("dup", "name-form", "PreToolUse", "bash", T, "only.jsonl", 1),
+            shape("dup", "name-form", "PreToolUse", "edit", T, "only.jsonl", 3),
+            shape(
+                "dup",
+                "name-form",
+                "PreToolUse",
+                "write",
+                T,
+                "only.jsonl",
+                5
+            ),
+            shape("dup", "name-form", "PreToolUse", "edit", T, "only.jsonl", 7),
+            shape("dup", "name-form", "PreToolUse", "bash", T, "only.jsonl", 9),
+        ]
+    );
 }
 
 #[test]
@@ -553,6 +749,47 @@ fn test_the_evidence_carries_one_verdict_per_handed_hook_in_handing_order_and_a_
             None
         ),
         Ok(true)
+    );
+
+    let evidence = build_evidence(&hooks, &records, None, None).expect("the evidence builds");
+    let verdicts = match evidence.get("verdicts") {
+        Some(JsonValue::List(items)) => items.clone(),
+        _ => panic!("the evidence carries its verdicts"),
+    };
+    assert_eq!(verdicts.len(), 3);
+    assert_eq!(
+        validate_evidence(&evidence, &hooks, &records, None, None),
+        Ok(true)
+    );
+    let mut swapped = verdicts.clone();
+    swapped.swap(0, 2);
+    let format = match evidence.get("format") {
+        Some(value) => value.clone(),
+        _ => panic!("the evidence carries its format"),
+    };
+    let tampered = JsonValue::object(vec![
+        ("format", format),
+        ("verdicts", JsonValue::List(swapped)),
+    ]);
+    assert!(validate_evidence(&tampered, &hooks, &records, None, None).is_err());
+
+    let pair = [
+        hook("dup", "PreToolUse", "Bash", "guard-one.sh"),
+        hook("dup", "PreToolUse", "Write", "guard-two.sh"),
+    ];
+    let records = [
+        hook_run("guard-one.sh", T, 1),
+        hook_run("undeclared.sh", T, 2),
+    ];
+    let runs = unconfigured_runs(&pair, &records, None, None, &sources)
+        .expect("the unconfigured runs stand");
+    assert_eq!(runs.len(), 1);
+    assert_eq!(
+        match runs[0].get("command") {
+            Some(JsonValue::Text(text)) => Some(text.clone()),
+            _ => None,
+        },
+        Some("undeclared.sh".to_string())
     );
 }
 
