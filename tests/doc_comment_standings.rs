@@ -243,6 +243,27 @@ fn test_the_doc_comment_over_the_window_word_helper_states_the_lossy_reading_and
         !block.contains("no timestamp that grammar accepts can contain"),
         "the falsified sentence of the landed comment stands absent from the helper comment whole: {block}"
     );
+    assert!(
+        !block.contains("cannot contain the replacement character")
+            && !block.contains("can never contain")
+            && !block.contains("no accepted timestamp can contain")
+            && !block.contains("refuses as no timestamp whole"),
+        "no spelling of the falsified claim family stands in the helper comment whole: {block}"
+    );
+    for sentence in block.split(". ") {
+        if let Some(at) = sentence.find("contain") {
+            let before = &sentence[..at];
+            assert!(
+                !before.contains("cannot")
+                    && !before.contains("can not")
+                    && !before.contains("never")
+                    && !before.contains(" not ")
+                    && !before.contains(" no ")
+                    && !before.starts_with("no "),
+                "no negated form of the falsified claim stands ahead of the containment word in its sentence: {sentence}"
+            );
+        }
+    }
 }
 
 #[test]
@@ -272,6 +293,16 @@ fn test_the_doc_sentence_over_the_validation_error_type_names_the_three_disagree
     assert!(
         !block.contains("Raised when a report disagrees with a rebuilt examination"),
         "the narrow sentence of the landed comment stands absent as the type its whole raising: {block}"
+    );
+    assert!(
+        !block.contains("Raised when a report disagrees")
+            && !block.contains("Raised where a report disagrees")
+            && !block.contains("Raised at the report disagreement"),
+        "no narrow spelling of the landed sentence stands in the type sentence whole: {block}"
+    );
+    assert!(
+        block.starts_with("Raised at the validation seats"),
+        "the type sentence opens on the whole life at the validation seats: {block}"
     );
 }
 
@@ -309,6 +340,26 @@ fn test_a_window_word_carrying_a_byte_that_is_not_utf_8_text_at_the_separator_se
     assert!(
         bound.contains('\u{FFFD}'),
         "the spelled end bound carries the replacement character at the separator seat: {bound}"
+    );
+    let truncated_cell = cell_dir(&pin, "truncated");
+    let output = run_report(
+        &truncated_cell,
+        &[("--window-start", byte_word(b"2025-12-31\xe2\x8200:00:00Z"))],
+    );
+    assert!(
+        output.status.success(),
+        "the truncated sequence run at the separator seat succeeds: {}",
+        stderr_text(&output)
+    );
+    let bound = window_bound(&truncated_cell, "start").expect("the start bound stands spelled");
+    assert_eq!(
+        bound.matches('\u{FFFD}').count(),
+        1,
+        "the spelled bound carries the replacement character exactly once for the one truncated sequence: {bound}"
+    );
+    assert_eq!(
+        bound, "2025-12-31\u{FFFD}00:00:00Z",
+        "the spelled bound stands exact at the separator seat: {bound}"
     );
 }
 
@@ -370,6 +421,25 @@ fn test_a_window_word_carrying_a_byte_that_is_not_utf_8_text_in_the_fraction_tai
     assert!(
         bound.contains('\u{FFFD}'),
         "the spelled bound carries the replacement character standing as text in the fraction tail: {bound}"
+    );
+    let truncated_cell = cell_dir(&pin, "truncated");
+    let output = run_report(
+        &truncated_cell,
+        &[(
+            "--window-start",
+            byte_word(b"2025-12-31T00:00:00.123456\xe2\x82+01:00"),
+        )],
+    );
+    assert!(
+        output.status.success(),
+        "the truncated sequence run in the fraction tail with an offset following succeeds: {}",
+        stderr_text(&output)
+    );
+    let bound = window_bound(&truncated_cell, "start").expect("the start bound stands spelled");
+    assert_eq!(
+        bound.matches('\u{FFFD}').count(),
+        1,
+        "the spelled bound carries the replacement character exactly once for the one truncated sequence in the fraction tail: {bound}"
     );
 }
 
@@ -461,6 +531,43 @@ fn test_the_validation_error_stands_raised_at_the_mapping_seat_of_each_validatio
     )
     .expect_err("the crossed matcher refusal refuses at the report validation");
     assert_eq!(error.message(), "a matcher is not a valid pattern");
+
+    let rendered = render_markdown(&report);
+    let bad_hook = hook("PreToolUse", Some("["), "guard.sh");
+    let error: ReportValidationError = validate_markdown(
+        rendered.as_bytes(),
+        &[bad_hook],
+        &[tool_call(1)],
+        "cfg",
+        &sources(),
+        None,
+        None,
+    )
+    .expect_err("the crossed matcher refusal refuses at the markdown validation");
+    assert_eq!(error.message(), "a matcher is not a valid pattern");
+
+    let bad_hook = hook("PreToolUse", Some("["), "guard.sh");
+    let error: ReportValidationError = validate_evidence(
+        &JsonValue::object(vec![]),
+        &[bad_hook],
+        &[tool_call(1)],
+        None,
+        None,
+    )
+    .expect_err("the crossed matcher refusal refuses at the evidence validation");
+    assert_eq!(error.message(), "a matcher is not a valid pattern");
+
+    let error: ReportValidationError = validate_report(
+        &report,
+        &hooks,
+        &[],
+        "cfg",
+        &sources(),
+        None,
+        Some("not a timestamp"),
+    )
+    .expect_err("the crossed window end refusal refuses at the report validation");
+    assert_eq!(error.message(), "the window end is not a timestamp");
 }
 
 #[test]
