@@ -363,13 +363,18 @@ fn path_of(values: &Values, name: &str) -> PathBuf {
 /// words never pass through it, standing as bytes for the
 /// filesystem end to end, and the label words stand apart in the
 /// door, refused there where they are not UTF-8 text, because a
-/// label flows into the outputs as data. A window word a
-/// timestamp grammar reads, and no timestamp that grammar
-/// accepts can contain the replacement character, so a word
-/// carrying a byte that is not UTF-8 reads here with that
-/// character standing in it and refuses as no timestamp under
-/// the window wording, while a word that stands whole as UTF-8
-/// passes through unchanged.
+/// label flows into the outputs as data. A window word stands
+/// read here through the lossy conversion, a word standing
+/// whole as UTF-8 text passing unchanged and a word carrying a
+/// byte that is not UTF-8 text passing with each invalid
+/// sequence standing as the replacement character in the text,
+/// and the timestamp reading then decides the word whole. A
+/// timestamp the grammar accepts can contain the replacement
+/// character, at the separator seat of the grammar and in the
+/// fraction tail the forgiving reading discards, so such a word
+/// reads as a timestamp at those seats and refuses as no
+/// timestamp under the window wording only where the text the
+/// reading receives reads as none.
 fn word_text(value: &OsString) -> String {
     value.to_string_lossy().into_owned()
 }

@@ -30,7 +30,11 @@ impl fmt::Display for HookdoctorError {
 
 impl std::error::Error for HookdoctorError {}
 
-/// Raised when a report disagrees with a rebuilt examination.
+/// Raised at the validation seats, where a supplied report or
+/// markdown report or evidence document disagrees with the
+/// rebuilt examination under the wording of its reading, and
+/// where a refusal of the rebuild crosses into this type at the
+/// head of a validation carrying its message whole.
 ///
 /// Mirrors the Python `ReportValidationError`, a subclass of the
 /// hookdoctor error there and a sibling type here.
