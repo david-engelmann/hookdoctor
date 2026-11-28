@@ -117,7 +117,55 @@ fn test_a_duplicate_carried_by_an_object_that_closes_before_the_parse_reaches_a_
         dup("evidence document", "b")
     );
 
+    // A bare token standing past the whole value behind a closed
+    // repeat.
+    assert_eq!(
+        refusal("{\"a\":1,\"a\":2} @", "configuration"),
+        dup("configuration", "a")
+    );
+
+    // A lone surrogate string standing past the whole value
+    // behind a closed repeat.
+    assert_eq!(
+        refusal(r#"{"a":1,"a":2} "\uD800""#, "configuration"),
+        dup("configuration", "a")
+    );
+
+    // The repeated key written under an escape standing first,
+    // the plain spelling behind it, the repeat closing ahead of
+    // trailing content.
+    assert_eq!(
+        refusal(r#"{"\u0061":1,"a":2} xyz"#, "configuration"),
+        dup("configuration", "a")
+    );
+
+    // Both spellings of the repeated key written under escapes.
+    assert_eq!(
+        refusal(r#"{"\u0061":1,"\u0061":2}"#, "configuration"),
+        dup("configuration", "a")
+    );
+
+    // The same parting under the session transcript label.
+    assert_eq!(
+        refusal("{\"a\":1,\"a\":2} xyz", "session transcript"),
+        dup("session transcript", "a")
+    );
+
+    // The same parting under a caller label no standing text
+    // names.
+    assert_eq!(
+        refusal("{\"a\":1,\"a\":2} xyz", "intake packet"),
+        dup("intake packet", "a")
+    );
+
     match parse_json("{\"a\":1,\"a\":2} xyz") {
+        Err(ParseFailure::DuplicateKey(key)) => assert_eq!(key, "a"),
+        other => panic!("expected the duplicate failure, got {other:?}"),
+    }
+
+    // The escaped shape at the decoder itself, the duplicate
+    // failure carrying the decoded key.
+    match parse_json(r#"{"\u0061":1,"a":2} xyz"#) {
         Err(ParseFailure::DuplicateKey(key)) => assert_eq!(key, "a"),
         other => panic!("expected the duplicate failure, got {other:?}"),
     }
@@ -152,7 +200,42 @@ fn test_a_token_that_does_not_read_standing_before_a_duplicated_object_closes_re
         invalid("configuration")
     );
 
+    // A token inside the object standing as the first value of
+    // the key that repeats behind it.
+    assert_eq!(
+        refusal("{\"a\":{\"x\":@},\"a\":2}", "configuration"),
+        invalid("configuration")
+    );
+
+    // A token inside the object standing as the repeated key its
+    // own value.
+    assert_eq!(
+        refusal("{\"a\":1,\"a\":{\"x\":@}}", "configuration"),
+        invalid("configuration")
+    );
+
+    // A token inside the list standing as the repeated key its
+    // own value.
+    assert_eq!(
+        refusal("{\"a\":1,\"a\":[1,@]}", "configuration"),
+        invalid("configuration")
+    );
+
+    // A literal that does not read standing as the repeated key
+    // its own value.
+    assert_eq!(
+        refusal("{\"a\":1,\"a\":nul}", "configuration"),
+        invalid("configuration")
+    );
+
     match parse_json("{\"a\":1,\"a\":@}") {
+        Err(ParseFailure::Invalid) => {}
+        other => panic!("expected the invalid failure, got {other:?}"),
+    }
+
+    // The token inside the repeated key its own value at the
+    // decoder itself.
+    match parse_json("{\"a\":1,\"a\":{\"x\":@}}") {
         Err(ParseFailure::Invalid) => {}
         other => panic!("expected the invalid failure, got {other:?}"),
     }
@@ -214,6 +297,50 @@ fn test_at_the_file_door_the_closed_first_shape_names_its_key_and_the_token_firs
         file_refusal(&missing, "evidence document"),
         "the evidence document could not be read"
     );
+
+    // Bytes that do not decode standing behind a document that
+    // would name its key. The decode seat fires ahead of the
+    // parse whole.
+    let mut bytes = b"{\"a\":1,\"a\":2}".to_vec();
+    bytes.push(0xff);
+    let behind = dir.join("behind.json");
+    std::fs::write(&behind, &bytes).expect("the file writes");
+    assert_eq!(
+        file_refusal(&behind, "evidence document"),
+        invalid("evidence document")
+    );
+
+    // A directory standing at the path refuses as could not be
+    // read.
+    assert_eq!(
+        file_refusal(&dir, "evidence document"),
+        "the evidence document could not be read"
+    );
+
+    // The token first shape through the file door in its plain
+    // form.
+    let plain = dir.join("plain.json");
+    std::fs::write(&plain, "{\"a\":1,\"a\":@}").expect("the file writes");
+    assert_eq!(
+        file_refusal(&plain, "evidence document"),
+        invalid("evidence document")
+    );
+
+    // An empty file decodes whole as empty text and the parse
+    // refuses it under the invalid wording.
+    let empty = dir.join("empty.json");
+    std::fs::write(&empty, "").expect("the file writes");
+    assert_eq!(
+        file_refusal(&empty, "evidence document"),
+        invalid("evidence document")
+    );
+
+    // The path that does not stand under the session transcript
+    // label.
+    assert_eq!(
+        file_refusal(&missing, "session transcript"),
+        "the session transcript could not be read"
+    );
 }
 
 fn deep_document(lists: usize, inner: &str) -> String {
@@ -226,6 +353,14 @@ fn refusal_on_large_stack(text: String, label: &'static str) -> String {
     let handle = std::thread::Builder::new()
         .stack_size(256 * 1024 * 1024)
         .spawn(move || refusal(&text, label))
+        .expect("thread stands");
+    handle.join().expect("thread completes")
+}
+
+fn decodes_on_large_stack(text: String) -> bool {
+    let handle = std::thread::Builder::new()
+        .stack_size(256 * 1024 * 1024)
+        .spawn(move || read_json_document(&text, "configuration").is_ok())
         .expect("thread stands");
     handle.join().expect("thread completes")
 }
@@ -246,6 +381,33 @@ fn test_a_lone_surrogate_refuses_as_not_valid_json_and_a_repeat_closing_before_a
         dup("configuration", "a")
     );
 
+    // A lone low surrogate standing alone in a document.
+    assert_eq!(
+        refusal(r#"{"s":"\uDC00"}"#, "configuration"),
+        invalid("configuration")
+    );
+
+    // A lone surrogate standing as the repeated key its own
+    // value.
+    assert_eq!(
+        refusal(r#"{"a":1,"a":"\uD800"}"#, "configuration"),
+        invalid("configuration")
+    );
+
+    // A repeat closing inside a list element ahead of a lone
+    // surrogate standing as a later element.
+    assert_eq!(
+        refusal(r#"[{"a":1,"a":2},"\uD800"]"#, "configuration"),
+        dup("configuration", "a")
+    );
+
+    // A lone surrogate standing in an inner object ahead of the
+    // outer object its repeat closing.
+    assert_eq!(
+        refusal(r#"{"o":{"s":"\uD800"},"a":1,"a":2}"#, "configuration"),
+        invalid("configuration")
+    );
+
     // The descent to the bound overflows a plain test thread stack in
     // this harness, so the deep documents run on a spawned thread
     // with an explicit large stack, in the form the pins of slices
@@ -260,6 +422,42 @@ fn test_a_lone_surrogate_refuses_as_not_valid_json_and_a_repeat_closing_before_a
         refusal_on_large_stack(past, "configuration"),
         invalid("configuration")
     );
+
+    // The duplicated object entered at the bound itself in
+    // lists stands refused by the bound ahead of its check.
+    assert_eq!(
+        refusal_on_large_stack(deep_document(4000, "{\"a\":1,\"a\":2}"), "configuration"),
+        invalid("configuration")
+    );
+
+    // The bound at its edge through object nesting. The
+    // innermost object standing at depth 3999 names its key.
+    let doc = format!(
+        "{}{{\"a\":1,\"a\":2}}{}",
+        "{\"k\":".repeat(3999),
+        "}".repeat(3999)
+    );
+    assert_eq!(
+        refusal_on_large_stack(doc, "configuration"),
+        dup("configuration", "a")
+    );
+
+    // The innermost object standing at depth 4000 stands
+    // refused by the bound ahead of its check.
+    let doc = format!(
+        "{}{{\"a\":1,\"a\":2}}{}",
+        "{\"k\":".repeat(4000),
+        "}".repeat(4000)
+    );
+    assert_eq!(
+        refusal_on_large_stack(doc, "configuration"),
+        invalid("configuration")
+    );
+
+    // A document nested exactly at the bound with no duplicate
+    // decodes whole, the bound refusing only past itself.
+    let at_bound = format!("{}1{}", "[".repeat(4000), "]".repeat(4000));
+    assert!(decodes_on_large_stack(at_bound));
 }
 
 /// The standing of one full call of the door over a
@@ -341,5 +539,51 @@ fn test_at_the_door_a_settings_document_whose_object_closes_its_repeat_before_a_
     assert_eq!(
         refusal_line(&run),
         "hookdoctor error: the configuration is not valid JSON\n"
+    );
+
+    let dir = scratch_dir("check-evidence-settings");
+    let settings = dir.join("settings.json");
+    std::fs::write(&settings, "{}").expect("the settings document writes");
+    let session = dir.join("session.jsonl");
+    std::fs::write(&session, "{\"type\":\"user\"}\n").expect("the session writes");
+    let evidence = dir.join("evidence.json");
+    std::fs::write(&evidence, "{\"a\":1,\"a\":2} xyz").expect("the evidence document writes");
+    let run = run_call(
+        &dir,
+        vec![
+            word("--config"),
+            settings.into_os_string(),
+            word("--session"),
+            session.into_os_string(),
+            word("--check-evidence"),
+            evidence.into_os_string(),
+        ],
+    );
+    assert_eq!(
+        refusal_line(&run),
+        "hookdoctor error: the evidence document carries the key a more than once\n"
+    );
+
+    let dir = scratch_dir("check-report-settings");
+    let settings = dir.join("settings.json");
+    std::fs::write(&settings, "{}").expect("the settings document writes");
+    let session = dir.join("session.jsonl");
+    std::fs::write(&session, "{\"type\":\"user\"}\n").expect("the session writes");
+    let supplied = dir.join("report.json");
+    std::fs::write(&supplied, r#"{"a":@,"\u0061":2}"#).expect("the report document writes");
+    let run = run_call(
+        &dir,
+        vec![
+            word("--config"),
+            settings.into_os_string(),
+            word("--session"),
+            session.into_os_string(),
+            word("--check-report"),
+            supplied.into_os_string(),
+        ],
+    );
+    assert_eq!(
+        refusal_line(&run),
+        "hookdoctor error: the report is not valid JSON\n"
     );
 }
